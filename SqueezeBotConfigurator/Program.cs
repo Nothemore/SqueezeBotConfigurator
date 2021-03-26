@@ -7,6 +7,23 @@ using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
+
+
+
+/*asdasda
+    Strict Содержить ссылку на конктреный TestCase; Strict = BackTestSettings
+     BackTester(BackTestSettings,DataSet) return BackTestResult
+     Внутри BackTester вложенные циклы  + асинхронный вызов
+     TestResult => BackestResult
+
+
+
+
+    */
+
+
+
+
 namespace SqueezeBotConfigurator
 {
     class Program
@@ -16,31 +33,52 @@ namespace SqueezeBotConfigurator
 
             var directoryPath = @"C:\Users\Nocturne\Desktop\Новая папка (5)";
             var files = Directory.GetFiles(directoryPath, "*.csv");
+
             var inScopeCandeCount = 1440;
+            var configCount = 10;
 
-            //var path = @"C:\Users\Nocturne\Desktop\Новая папка (5)\BINANCE_FILUSDT, 1.txt";
-            //var dataSet = new DataSet(inScopeCandeCount, path);
+            var Settings = new BacktestSettings[6];
 
-            var stricts = new Stricts() { sellTrigerStep = 0.01, buyTriggerStep = 0.01 };
-            var reportCandleCount = 100;
 
-            var results = new List<TestResult>(files.Count());
+            var openSettings = new BacktestSettings(TradeOpenTrigger.open);
+            var closeSettings = new BacktestSettings(TradeOpenTrigger.close);
+            var openCloseSettings = new BacktestSettings(TradeOpenTrigger.openClose);
+            var highSettings = new BacktestSettings(TradeOpenTrigger.high);
+            var lowSettings = new BacktestSettings(TradeOpenTrigger.low);
+            var highLowSettings = new BacktestSettings(TradeOpenTrigger.highLow);
+
+
+            var results = new List<BacktestReport>(files.Count() * 6);
 
             var date = DateTime.Now.ToString();
             foreach (var file in files)
             {
                 var fileInfo = new FileInfo(file);
                 var localDataSet = new DataSet(inScopeCandeCount, fileInfo.FullName);
-                var testResult = new TestResult()
+
+
+                var openTester = new BacktestProvider(openSettings, localDataSet);
+                var closeTester = new BacktestProvider(closeSettings, localDataSet);
+                var openCloseTester = new BacktestProvider(openCloseSettings, localDataSet);
+                var hightTester = new BacktestProvider(highSettings, localDataSet);
+                var lowTester = new BacktestProvider(lowSettings, localDataSet);
+                var highLowTester = new BacktestProvider(highLowSettings, localDataSet);
+
+                var test = new List<Config>(6 * configCount);
+                for (int i = 0; i < Settings.Length; i++)
                 {
+                    var currentTest = new BacktestProvider(Settings[i], localDataSet);
+                    test.AddRange(currentTest.RunTest());
+                }
+
+                var testResult = new BacktestReport()
+                {
+                    Date = date,
                     FileName = fileInfo.Name,
-                    Configs = stricts.Test(localDataSet, reportCandleCount),
-                    CandleCount = inScopeCandeCount,
-                    Strict = stricts,
-                    Date = date
+                    Configs = test,
+                    CandleCount = inScopeCandeCount
                 };
                 results.Add(testResult);
-
             }
 
 
@@ -62,19 +100,58 @@ namespace SqueezeBotConfigurator
         }
     }
 
+
+    public class BacktestProvider
+    {
+        public BacktestSettings Settings;
+        public DataSet Data;
+        public BacktestProvider(BacktestSettings settings, DataSet data)
+        {
+            Settings = settings;
+            Data = data;
+        }
+
+        public List<Config> RunTest()
+        {
+            var bestConfigs = new List<Config>(Settings.configCount + 1);
+            for (double buyTrigger = Settings.buyTriggerMin; buyTrigger <= Settings.buyTriggerMax; buyTrigger += Settings.buyTriggerStep)
+            {
+                Settings.sellTriggerMax = buyTrigger * Settings.buySellRatio;
+                for (double sellTrigger = Settings.sellTriggerMin; sellTrigger <= Settings.sellTriggerMax; sellTrigger += Settings.sellTriggerStep)
+                {
+                    //for (double stopTrigger = minStopTrigger; stopTrigger <= maxStopTrigger; stopTrigger += stopTriggerStep)
+                    //{
+                    var currentConfig = new Config();
+                    currentConfig.useStop = Settings.useStopLoss;
+                    currentConfig.stopTrigger = Settings.stopTriggerDefaul;
+                    currentConfig.tradeOpenTrigger = Settings.tradeOpenTrigger;
+                    currentConfig.buyTrigger = buyTrigger;
+                    currentConfig.sellTrigger = sellTrigger;
+                    currentConfig.RunTest(Data, Settings.tradeOpenTrigger);
+                    bestConfigs.Add(currentConfig);
+                    //Вопрос о сортировки об отборе элементов передать в сеттенгс
+                    //bestConfigs = bestConfigs.OrderByDescending(x => x.totalProfit).Take(Settings.configCount).ToList();
+                    bestConfigs = Settings.ConfigFilter(bestConfigs);
+                    //}
+                }
+            }
+            return bestConfigs = bestConfigs.OrderByDescending(x => x.takeCount).ThenBy(x => x.stopCount).ThenBy(x => x.tradeOpenTrigger).ToList();
+        }
+    }
+
     public class Config
     {
-        public double stopTrigger;
-        public double sellTrigger;
         public double buyTrigger;
+        public double sellTrigger;
+        public double stopTrigger;
         public double totalProfit = 100;
         public int takeCount;
         public int stopCount;
         [JsonConverter(typeof(StringEnumConverter))]
-        public TestCase config;
+        public TradeOpenTrigger tradeOpenTrigger;
 
         [NonSerialized]
-        public bool useStop = true;
+        public bool useStop;
 
         [NonSerialized]
         public bool isDealOpen = false;
@@ -86,63 +163,55 @@ namespace SqueezeBotConfigurator
         public double sellPrice;
 
         [NonSerialized]
+        public double stopPrice;
+
+        [NonSerialized]
         public int openDealCandleIndex;
 
         [NonSerialized]
         public int closeCandleIndex;
 
-
-
-        public void Test(DataSet data, int testCase)
+        public void RunTest(DataSet data, TradeOpenTrigger tradeOpenTrigger)
         {
-            double[] currentTestCase = data.buyTriggerFlags[testCase];
+            double[] triggerPrice = data.tradeOpenTriggerValues[(int)tradeOpenTrigger];
             for (int currentCandleIndex = 1; currentCandleIndex < data.inScopeCandeCount - 1; currentCandleIndex++)
             {
                 //Откроем сделку?
                 if (!isDealOpen)
                 {
-                    var delta = (currentTestCase[currentCandleIndex - 1] / data.low[currentCandleIndex] - 1);
+                    //var delta = (triggerPrice[currentCandleIndex - 1] / data.low[currentCandleIndex] - 1);
+                    var delta = 1 - data.low[currentCandleIndex] / triggerPrice[currentCandleIndex - 1];
                     if (delta >= buyTrigger / 100)
                     {
                         isDealOpen = true;
-                        var triggerPrice = currentTestCase[currentCandleIndex - 1];
-                        buyPrice = currentTestCase[currentCandleIndex - 1] * (1 - buyTrigger / 100);
+                        buyPrice = triggerPrice[currentCandleIndex - 1] * (1 - buyTrigger / 100);
                         sellPrice = buyPrice * (1 + sellTrigger / 100);
+                        stopPrice = buyPrice * (1 - stopTrigger / 100);
                         openDealCandleIndex = currentCandleIndex;
                     }
                 }
-                //Закроем сделку?
-                if (isDealOpen)
+                //Закроем по тейку ?
+                if (isDealOpen && data.close[currentCandleIndex] > sellPrice)
                 {
-                    if (data.close[currentCandleIndex] > sellPrice)
-                    {
-                        isDealOpen = false;
-                        totalProfit *= (1 + sellTrigger / 100);
-                        closeCandleIndex = currentCandleIndex;
-                        takeCount++;
-                    }
-                    if (isDealOpen && useStop && currentCandleIndex > openDealCandleIndex)
-                    {
-                        var stopPrice = buyPrice * (1 - stopTrigger / 100);
-                        var currentlow = data.low[currentCandleIndex];
-                        if (stopPrice > data.low[currentCandleIndex])
-                        {
-                            totalProfit *= (1 - stopTrigger / 100);
-                            isDealOpen = false;
-                            closeCandleIndex = currentCandleIndex;
-                            stopCount++;
-                        }
-                    }
+                    isDealOpen = false;
+                    totalProfit *= (1 + sellTrigger / 100);
+                    closeCandleIndex = currentCandleIndex;
+                    takeCount++;
                 }
+
+                //Закроем по стопу ?
+                if (isDealOpen
+                    && useStop
+                    && currentCandleIndex > openDealCandleIndex
+                    && stopPrice > data.low[currentCandleIndex])
+                {
+                    isDealOpen = false;
+                    totalProfit *= (1 - stopTrigger / 100);
+                    closeCandleIndex = currentCandleIndex;
+                    stopCount++;
+                }
+
             }
-
-
-
-
-
-
-
-
         }
 
         public void WriteStatistic()
@@ -150,7 +219,7 @@ namespace SqueezeBotConfigurator
             var builder = new StringBuilder();
             builder.Append($"\nТриггер покупки {buyTrigger}, триггер продажи {sellTrigger}, Стоп триггер {stopTrigger}");
             builder.Append($"\nКоличество положительных сделок {takeCount}, количество отрицательных сделок {stopCount}");
-            builder.Append($"\nПрофитность {totalProfit}, config {(TestCase)config}");
+            builder.Append($"\nПрофитность {totalProfit}, config {tradeOpenTrigger}");
             //builder.Append($"\nПрофитность {totalProfit}, config {(Config)config} + {openDealCandleIndex} +{closeCandleIndex}  + {sellPrice } + { buyPrice}");
             //builder.AppendLine();
             Console.WriteLine(builder.ToString());
@@ -169,26 +238,23 @@ namespace SqueezeBotConfigurator
         public double[] highLowAverage;
         public int inScopeCandeCount;
         private string Path { get; set; }
-        public double[][] buyTriggerFlags = new double[6][];
-
+        public double[][] tradeOpenTriggerValues = new double[6][];
 
         public DataSet(int candleCount, string path)
         {
             Path = path;
             this.inScopeCandeCount = candleCount;
-            low = new double[inScopeCandeCount];
-            high = new double[inScopeCandeCount];
-            close = new double[inScopeCandeCount];
-            open = new double[inScopeCandeCount];
-            openCloseAverage = new double[inScopeCandeCount];
-            highLowAverage = new double[inScopeCandeCount];
+
+            tradeOpenTriggerValues[0] = low;
+            tradeOpenTriggerValues[1] = close;
+            tradeOpenTriggerValues[2] = open;
+            tradeOpenTriggerValues[3] = high;
+            tradeOpenTriggerValues[4] = openCloseAverage;
+            tradeOpenTriggerValues[5] = highLowAverage;
+
+            for (int i = 0; i < tradeOpenTriggerValues.Length; i++)
+                tradeOpenTriggerValues[i] = new double[inScopeCandeCount];
             FillDataSet();
-            buyTriggerFlags[0] = low;
-            buyTriggerFlags[1] = close;
-            buyTriggerFlags[2] = open;
-            buyTriggerFlags[3] = high;
-            buyTriggerFlags[4] = openCloseAverage;
-            buyTriggerFlags[5] = highLowAverage;
         }
 
         private void FillDataSet()
@@ -227,74 +293,43 @@ namespace SqueezeBotConfigurator
                 highLowAverage[i] = (high[i] + low[i]) / 2;
             }
         }
-
-
-
-
-
-
-
     }
 
-    public class Stricts
+    public class BacktestSettings
     {
-        public double maxBuyTrigger = 5;
-        public double minBuyTrigger = 1.2;
+        public double buyTriggerMin = 1.2;
+        public double buyTriggerMax = 5;
         public double buyTriggerStep = 0.1;
-        public double maxSellTrigger = 5;
-        public double minSellTrigger = 0.55;
-        public double sellTrigerStep = 0.1;
-        public double minStopTrigger = 2;
-        public double maxStopTrigger = 8;
-        public double tempStopLoss = 5;
+
+        public double sellTriggerMin = 0.55;
+        public double sellTriggerMax = 5;
+        public double sellTriggerStep = 0.1;
+
+        public double stopTriggerMin = 2;
+        public double stopTriggerMax = 8;
         public double stopTriggerStep = 0.1;
+        public double stopTriggerDefaul = 5;
         public bool useStopLoss = true;
-        private double[][] buyTriggerFlags = new double[6][];
-        public double multiplier = 0.33;
 
-        public List<Config> Test(DataSet dataSet, int configCount = 10)
+        public double buySellRatio = 0.33;
+        public int configCount = 10;
+        public TradeOpenTrigger tradeOpenTrigger;
+        public Func<List<Config>, List<Config>> ConfigFilter;
+
+        public BacktestSettings(TradeOpenTrigger tradeOpenTrigger)
         {
-            buyTriggerFlags[0] = dataSet.low;
-            buyTriggerFlags[1] = dataSet.close;
-            buyTriggerFlags[2] = dataSet.open;
-            buyTriggerFlags[3] = dataSet.high;
-            buyTriggerFlags[4] = dataSet.openCloseAverage;
-            buyTriggerFlags[5] = dataSet.highLowAverage;
-            var bestConfigs = new List<Config>(configCount + 1);
-            Config currentConfig;
-
-            for (int i = 0; i < buyTriggerFlags.Length; i++)
+            this.tradeOpenTrigger = tradeOpenTrigger;
+            ConfigFilter = (bestConfigs) =>
             {
-
-                for (double buyTrigger = minBuyTrigger; buyTrigger <= maxBuyTrigger; buyTrigger += buyTriggerStep)
-                {
-                    maxSellTrigger = buyTrigger * multiplier;
-                    for (double sellTrigger = minSellTrigger; sellTrigger <= maxSellTrigger; sellTrigger += sellTrigerStep)
-                    {
-                        //for (double stopTrigger = minStopTrigger; stopTrigger <= maxStopTrigger; stopTrigger += stopTriggerStep)
-                        //{
-                        currentConfig = new Config();
-                        currentConfig.isDealOpen = false;
-                        currentConfig.useStop = useStopLoss;
-                        currentConfig.buyTrigger = buyTrigger;
-                        currentConfig.sellTrigger = sellTrigger;
-                        currentConfig.stopTrigger = tempStopLoss;
-                        currentConfig.totalProfit = 100;
-                        currentConfig.config = (TestCase)i;
-                        currentConfig.Test(dataSet, i);
-                        bestConfigs.Add(currentConfig);
-                        bestConfigs = bestConfigs.OrderByDescending(x => x.totalProfit).Take(configCount).ToList();
-                        //}
-                    }
-                }
-            }
-            return bestConfigs = bestConfigs.OrderByDescending(x => x.takeCount).ThenBy(x => x.stopCount).ThenBy(x => x.config).ToList();
-
-
+                return bestConfigs
+                .OrderByDescending(x => x.totalProfit)
+                .Take(configCount)
+                .ToList();
+            };
         }
     }
 
-    public enum TestCase
+    public enum TradeOpenTrigger
     {
         low = 0,
         close = 1,
@@ -304,12 +339,12 @@ namespace SqueezeBotConfigurator
         highLow = 5
     }
 
-    public class TestResult
+    public class BacktestReport
     {
         public List<Config> Configs { get; set; }
         public string FileName;
         public int CandleCount;
-        public Stricts Strict;
+        public BacktestSettings BacktestSettings;
         public string Date;
     }
 }
