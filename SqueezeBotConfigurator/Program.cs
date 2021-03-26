@@ -38,14 +38,12 @@ namespace SqueezeBotConfigurator
             var configCount = 10;
 
             var Settings = new BacktestSettings[6];
-
-
-            var openSettings = new BacktestSettings(TradeOpenTrigger.open);
-            var closeSettings = new BacktestSettings(TradeOpenTrigger.close);
-            var openCloseSettings = new BacktestSettings(TradeOpenTrigger.openClose);
-            var highSettings = new BacktestSettings(TradeOpenTrigger.high);
-            var lowSettings = new BacktestSettings(TradeOpenTrigger.low);
-            var highLowSettings = new BacktestSettings(TradeOpenTrigger.highLow);
+            Settings[0] = new BacktestSettings(TradeOpenTrigger.open);
+            Settings[1] = new BacktestSettings(TradeOpenTrigger.close);
+            Settings[2] = new BacktestSettings(TradeOpenTrigger.openClose);
+            Settings[3] = new BacktestSettings(TradeOpenTrigger.high);
+            Settings[4] = new BacktestSettings(TradeOpenTrigger.low);
+            Settings[5] = new BacktestSettings(TradeOpenTrigger.highLow);
 
 
             var results = new List<BacktestReport>(files.Count() * 6);
@@ -55,15 +53,6 @@ namespace SqueezeBotConfigurator
             {
                 var fileInfo = new FileInfo(file);
                 var localDataSet = new DataSet(inScopeCandeCount, fileInfo.FullName);
-
-
-                var openTester = new BacktestProvider(openSettings, localDataSet);
-                var closeTester = new BacktestProvider(closeSettings, localDataSet);
-                var openCloseTester = new BacktestProvider(openCloseSettings, localDataSet);
-                var hightTester = new BacktestProvider(highSettings, localDataSet);
-                var lowTester = new BacktestProvider(lowSettings, localDataSet);
-                var highLowTester = new BacktestProvider(highLowSettings, localDataSet);
-
                 var test = new List<Config>(6 * configCount);
                 for (int i = 0; i < Settings.Length; i++)
                 {
@@ -245,15 +234,20 @@ namespace SqueezeBotConfigurator
             Path = path;
             this.inScopeCandeCount = candleCount;
 
+            low = new double[inScopeCandeCount];
+            close = new double[inScopeCandeCount];
+            open = new double[inScopeCandeCount];
+            high = new double[inScopeCandeCount];
+            openCloseAverage = new double[inScopeCandeCount];
+            highLowAverage = new double[inScopeCandeCount];
+
             tradeOpenTriggerValues[0] = low;
             tradeOpenTriggerValues[1] = close;
             tradeOpenTriggerValues[2] = open;
             tradeOpenTriggerValues[3] = high;
             tradeOpenTriggerValues[4] = openCloseAverage;
             tradeOpenTriggerValues[5] = highLowAverage;
-
-            for (int i = 0; i < tradeOpenTriggerValues.Length; i++)
-                tradeOpenTriggerValues[i] = new double[inScopeCandeCount];
+         
             FillDataSet();
         }
 
@@ -299,7 +293,7 @@ namespace SqueezeBotConfigurator
     {
         public double buyTriggerMin = 1.2;
         public double buyTriggerMax = 5;
-        public double buyTriggerStep = 0.1;
+        public double buyTriggerStep = 0.01;
 
         public double sellTriggerMin = 0.55;
         public double sellTriggerMax = 5;
@@ -307,7 +301,7 @@ namespace SqueezeBotConfigurator
 
         public double stopTriggerMin = 2;
         public double stopTriggerMax = 8;
-        public double stopTriggerStep = 0.1;
+        public double stopTriggerStep = 0.01;
         public double stopTriggerDefaul = 5;
         public bool useStopLoss = true;
 
