@@ -6,22 +6,7 @@ using System.Threading.Tasks;
 using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-
-
-
-
-/*asdasda
-    Strict Содержить ссылку на конктреный TestCase; Strict = BackTestSettings
-     BackTester(BackTestSettings,DataSet) return BackTestResult
-     Внутри BackTester вложенные циклы  + асинхронный вызов
-     TestResult => BackestResult
-
-
-
-
-    */
-
-
+using System.Diagnostics;
 
 
 namespace SqueezeBotConfigurator
@@ -35,39 +20,87 @@ namespace SqueezeBotConfigurator
             var files = Directory.GetFiles(directoryPath, "*.csv");
 
             var inScopeCandeCount = 1440;
-            var configCount = 10;
+            var configsCount = 10;
 
-            var Settings = new BacktestSettings[6];
-            Settings[0] = new BacktestSettings(TradeOpenTrigger.open);
-            Settings[1] = new BacktestSettings(TradeOpenTrigger.close);
-            Settings[2] = new BacktestSettings(TradeOpenTrigger.openClose);
-            Settings[3] = new BacktestSettings(TradeOpenTrigger.high);
-            Settings[4] = new BacktestSettings(TradeOpenTrigger.low);
-            Settings[5] = new BacktestSettings(TradeOpenTrigger.highLow);
+            var Settings = new BacktestSettings[]
+            {
+                new BacktestSettings(TradeOpenTrigger.open)     {configCount = configsCount },
+                new BacktestSettings(TradeOpenTrigger.close)    {configCount = configsCount },
+                new BacktestSettings(TradeOpenTrigger.openClose){configCount = configsCount },
+                new BacktestSettings(TradeOpenTrigger.high)     {configCount = configsCount },
+                new BacktestSettings(TradeOpenTrigger.low)      {configCount = configsCount },
+                new BacktestSettings(TradeOpenTrigger.highLow)  {configCount = configsCount }
+            };
 
-
-            var results = new List<BacktestReport>(files.Count() * 6);
-
+            var reports = new List<BacktestReport>(files.Count() * Settings.Length);
             var date = DateTime.Now.ToString();
+
             foreach (var file in files)
             {
                 var fileInfo = new FileInfo(file);
-                var localDataSet = new DataSet(inScopeCandeCount, fileInfo.FullName);
-                var test = new List<Config>(6 * configCount);
-                for (int i = 0; i < Settings.Length; i++)
+                var dataSet = new DataSet(inScopeCandeCount, fileInfo.FullName);
+                var configs = new List<Config>(Settings.Length * configsCount);
+
+                //Многопоточный вызов
+                var tasks = new Task[Settings.Length];
+                var backtests = new BacktestProvider[Settings.Length];
+
+                for (int i = 0; i < tasks.Length; i++)
                 {
-                    var currentTest = new BacktestProvider(Settings[i], localDataSet);
-                    test.AddRange(currentTest.RunTest());
+                    var backtest = new BacktestProvider(Settings[i], dataSet);
+                    backtests[i] = backtest;
+
+                    Action currentTest;
+                    if (Settings[i].calculateStop)
+                        currentTest = () => { backtest.RunTestCalculatedStop(); };
+                    else
+                        currentTest = () => { backtest.RunTestDefaltStop(); };
+
+
+                    tasks[i] = new Task(currentTest);
+                    tasks[i].Start();
+                }
+                Task.WaitAll(tasks);
+
+                for (int i = 0; i < tasks.Length; i++)
+                {
+                    configs.AddRange(backtests[i].Configs);
                 }
 
-                var testResult = new BacktestReport()
+                ////Однопоточный вызов
+                //for (int i = 0; i < Settings.Length; i++)
+                //{
+                //    var currentTest = new BacktestProvider(Settings[i], dataSet);
+                //    if (Settings[i].calculateStop)
+                //        currentTest.RunTestCalculatedStop();
+                //    else
+                //        currentTest.RunTestDefaltStop();
+
+                //    configs.AddRange(currentTest.Configs);
+                //}
+
+
+
+                //configs.ForEach(x => x.WriteStatistic());
+
+                //Console.ReadKey();
+                //return;
+
+
+
+
+
+
+
+
+                var backtestReport = new BacktestReport()
                 {
                     Date = date,
                     FileName = fileInfo.Name,
-                    Configs = test,
+                    Configs = configs,
                     CandleCount = inScopeCandeCount
                 };
-                results.Add(testResult);
+                reports.Add(backtestReport);
             }
 
 
@@ -76,7 +109,7 @@ namespace SqueezeBotConfigurator
             {
                 JsonSerializer serializer = new JsonSerializer();
                 serializer.Formatting = Formatting.Indented;
-                serializer.Serialize(file, results);
+                serializer.Serialize(file, reports);
             }
 
 
@@ -94,13 +127,14 @@ namespace SqueezeBotConfigurator
     {
         public BacktestSettings Settings;
         public DataSet Data;
+        public List<Config> Configs { get; private set; }
         public BacktestProvider(BacktestSettings settings, DataSet data)
         {
             Settings = settings;
             Data = data;
         }
 
-        public List<Config> RunTest()
+        public void RunTestDefaltStop()
         {
             var bestConfigs = new List<Config>(Settings.configCount + 1);
             for (double buyTrigger = Settings.buyTriggerMin; buyTrigger <= Settings.buyTriggerMax; buyTrigger += Settings.buyTriggerStep)
@@ -108,8 +142,7 @@ namespace SqueezeBotConfigurator
                 Settings.sellTriggerMax = buyTrigger * Settings.buySellRatio;
                 for (double sellTrigger = Settings.sellTriggerMin; sellTrigger <= Settings.sellTriggerMax; sellTrigger += Settings.sellTriggerStep)
                 {
-                    //for (double stopTrigger = minStopTrigger; stopTrigger <= maxStopTrigger; stopTrigger += stopTriggerStep)
-                    //{
+
                     var currentConfig = new Config();
                     currentConfig.useStop = Settings.useStopLoss;
                     currentConfig.stopTrigger = Settings.stopTriggerDefaul;
@@ -121,11 +154,27 @@ namespace SqueezeBotConfigurator
                     //Вопрос о сортировки об отборе элементов передать в сеттенгс
                     //bestConfigs = bestConfigs.OrderByDescending(x => x.totalProfit).Take(Settings.configCount).ToList();
                     bestConfigs = Settings.ConfigFilter(bestConfigs);
-                    //}
+
                 }
             }
-            return bestConfigs = bestConfigs.OrderByDescending(x => x.takeCount).ThenBy(x => x.stopCount).ThenBy(x => x.tradeOpenTrigger).ToList();
+            Configs = bestConfigs.OrderByDescending(x => x.takeCount).ThenBy(x => x.stopCount).ThenBy(x => x.tradeOpenTrigger).ToList();
+
         }
+
+        public void RunTestCalculatedStop()
+        {
+            for (double stopTrigger = Settings.stopTriggerMax; stopTrigger >= Settings.stopTriggerMin; stopTrigger -= Settings.stopTriggerStep)
+            {
+                Settings.stopTriggerDefaul = stopTrigger;
+                RunTestDefaltStop();
+            }
+        }
+
+
+
+
+
+
     }
 
     public class Config
@@ -247,7 +296,7 @@ namespace SqueezeBotConfigurator
             tradeOpenTriggerValues[3] = high;
             tradeOpenTriggerValues[4] = openCloseAverage;
             tradeOpenTriggerValues[5] = highLowAverage;
-         
+
             FillDataSet();
         }
 
@@ -297,15 +346,16 @@ namespace SqueezeBotConfigurator
 
         public double sellTriggerMin = 0.55;
         public double sellTriggerMax = 5;
-        public double sellTriggerStep = 0.1;
+        public double sellTriggerStep = 0.01;
 
         public double stopTriggerMin = 2;
         public double stopTriggerMax = 8;
-        public double stopTriggerStep = 0.01;
+        public double stopTriggerStep = 0.1;
         public double stopTriggerDefaul = 5;
         public bool useStopLoss = true;
+        public bool calculateStop = true;
 
-        public double buySellRatio = 0.33;
+        public double buySellRatio = 0.4;
         public int configCount = 10;
         public TradeOpenTrigger tradeOpenTrigger;
         public Func<List<Config>, List<Config>> ConfigFilter;
