@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System.Diagnostics;
 using System.Net;
+using System.Reflection;
 
 namespace SqueezeBotConfigurator
 {
@@ -16,9 +17,13 @@ namespace SqueezeBotConfigurator
         static void Main(string[] args)
         {
 
+         
+
+           
+
             MainBinanceWithMethod(null);
 
-
+            return;
 
             var useParallel = true;
             var directoryPath = @"C:\Users\Nocturne\Desktop\Новая папка (5)";
@@ -338,12 +343,27 @@ namespace SqueezeBotConfigurator
 
         static void MainBinanceWithMethod(string[] args)
         {
+            var currentPath = Assembly.GetExecutingAssembly().Location;
+            var path = currentPath.Replace("SqueezeBotConfigurator.exe", "Settings.json");
 
-            var files = new[]
-           {
-                     new TikerAndTimeFrame(   Tiker.STORJUSDT, TimeFrame.oneMinute ),
-            };
-            var directoryPath = @"C:\Users\Nocturne\Desktop\Новая папка (5)";
+            ExternalSettings externalSetting;
+            using (StreamReader file = File.OpenText(path))
+            {
+                JsonSerializer serializer = new JsonSerializer();
+                externalSetting = (ExternalSettings)serializer.Deserialize(file, typeof(ExternalSettings));
+            }
+
+
+            // var files = new[]
+            //{
+            //          new TikerAndTimeFrame(   Tiker.STORJUSDT, TimeFrame.oneMinute ),
+            // };
+
+            var files = externalSetting.tikersAndFrames;
+
+
+            //var directoryPath = @"C:\Users\Nocturne\Desktop\Новая папка (5)";
+            var directoryPath = currentPath.Replace(@"\SqueezeBotConfigurator.exe",string.Empty);
 
             var inScopeCandeCount = 1000;
             var configsCount = 10;
@@ -368,7 +388,7 @@ namespace SqueezeBotConfigurator
                 reports.Add(backtestReport);
             }
 
-            var jsonFilePath = directoryPath + @"\SqResult1.json";
+            var jsonFilePath = directoryPath + @"\SqResult.json";
             using (StreamWriter file = File.CreateText(jsonFilePath))
             {
                 JsonSerializer serializer = new JsonSerializer();
@@ -699,14 +719,295 @@ namespace SqueezeBotConfigurator
         public string Date;
     }
 
+    [JsonConverter(typeof(StringEnumConverter))]
     public enum Tiker
     {
-        ALICEUSDT,
+        BTCUSDT,
+        ETHUSDT,
         BNBUSDT,
-        STORJUSDT
-
+        BCCUSDT,
+        NEOUSDT,
+        LTCUSDT,
+        QTUMUSDT,
+        ADAUSDT,
+        XRPUSDT,
+        EOSUSDT,
+        TUSDUSDT,
+        IOTAUSDT,
+        XLMUSDT,
+        ONTUSDT,
+        TRXUSDT,
+        ETCUSDT,
+        ICXUSDT,
+        VENUSDT,
+        NULSUSDT,
+        VETUSDT,
+        PAXUSDT,
+        BCHABCUSDT,
+        BCHSVUSDT,
+        USDCUSDT,
+        LINKUSDT,
+        WAVESUSDT,
+        BTTUSDT,
+        USDSUSDT,
+        ONGUSDT,
+        HOTUSDT,
+        ZILUSDT,
+        ZRXUSDT,
+        FETUSDT,
+        BATUSDT,
+        XMRUSDT,
+        ZECUSDT,
+        IOSTUSDT,
+        CELRUSDT,
+        DASHUSDT,
+        NANOUSDT,
+        OMGUSDT,
+        THETAUSDT,
+        ENJUSDT,
+        MITHUSDT,
+        MATICUSDT,
+        ATOMUSDT,
+        TFUELUSDT,
+        ONEUSDT,
+        FTMUSDT,
+        ALGOUSDT,
+        USDSBUSDT,
+        GTOUSDT,
+        ERDUSDT,
+        DOGEUSDT,
+        DUSKUSDT,
+        ANKRUSDT,
+        WINUSDT,
+        COSUSDT,
+        NPXSUSDT,
+        COCOSUSDT,
+        MTLUSDT,
+        TOMOUSDT,
+        PERLUSDT,
+        DENTUSDT,
+        MFTUSDT,
+        KEYUSDT,
+        STORMUSDT,
+        DOCKUSDT,
+        WANUSDT,
+        FUNUSDT,
+        CVCUSDT,
+        CHZUSDT,
+        BANDUSDT,
+        BUSDUSDT,
+        BEAMUSDT,
+        XTZUSDT,
+        RENUSDT,
+        RVNUSDT,
+        HCUSDT,
+        HBARUSDT,
+        NKNUSDT,
+        STXUSDT,
+        KAVAUSDT,
+        ARPAUSDT,
+        IOTXUSDT,
+        RLCUSDT,
+        MCOUSDT,
+        CTXCUSDT,
+        BCHUSDT,
+        TROYUSDT,
+        VITEUSDT,
+        FTTUSDT,
+        BUSDTRY,
+        USDTTRY,
+        USDTRUB,
+        EURUSDT,
+        OGNUSDT,
+        DREPUSDT,
+        BULLUSDT,
+        BEARUSDT,
+        ETHBULLUSDT,
+        ETHBEARUSDT,
+        TCTUSDT,
+        WRXUSDT,
+        BTSUSDT,
+        LSKUSDT,
+        BNTUSDT,
+        LTOUSDT,
+        EOSBULLUSDT,
+        EOSBEARUSDT,
+        XRPBULLUSDT,
+        XRPBEARUSDT,
+        STRATUSDT,
+        AIONUSDT,
+        MBLUSDT,
+        COTIUSDT,
+        BNBBULLUSDT,
+        BNBBEARUSDT,
+        STPTUSDT,
+        USDTZAR,
+        WTCUSDT,
+        DATAUSDT,
+        XZCUSDT,
+        SOLUSDT,
+        USDTIDRT,
+        CTSIUSDT,
+        HIVEUSDT,
+        CHRUSDT,
+        BTCUPUSDT,
+        BTCDOWNUSDT,
+        GXSUSDT,
+        ARDRUSDT,
+        LENDUSDT,
+        MDTUSDT,
+        STMXUSDT,
+        KNCUSDT,
+        REPUSDT,
+        LRCUSDT,
+        PNTUSDT,
+        USDTUAH,
+        COMPUSDT,
+        USDTBIDR,
+        BKRWUSDT,
+        SCUSDT,
+        ZENUSDT,
+        SNXUSDT,
+        ETHUPUSDT,
+        ETHDOWNUSDT,
+        ADAUPUSDT,
+        ADADOWNUSDT,
+        LINKUPUSDT,
+        LINKDOWNUSDT,
+        VTHOUSDT,
+        DGBUSDT,
+        GBPUSDT,
+        SXPUSDT,
+        MKRUSDT,
+        DAIUSDT,
+        DCRUSDT,
+        STORJUSDT,
+        BNBUPUSDT,
+        BNBDOWNUSDT,
+        XTZUPUSDT,
+        XTZDOWNUSDT,
+        USDTBKRW,
+        MANAUSDT,
+        AUDUSDT,
+        YFIUSDT,
+        BALUSDT,
+        BLZUSDT,
+        IRISUSDT,
+        KMDUSDT,
+        USDTDAI,
+        JSTUSDT,
+        SRMUSDT,
+        ANTUSDT,
+        CRVUSDT,
+        SANDUSDT,
+        OCEANUSDT,
+        NMRUSDT,
+        DOTUSDT,
+        LUNAUSDT,
+        RSRUSDT,
+        PAXGUSDT,
+        WNXMUSDT,
+        TRBUSDT,
+        BZRXUSDT,
+        SUSHIUSDT,
+        YFIIUSDT,
+        KSMUSDT,
+        EGLDUSDT,
+        DIAUSDT,
+        RUNEUSDT,
+        FIOUSDT,
+        UMAUSDT,
+        EOSUPUSDT,
+        EOSDOWNUSDT,
+        TRXUPUSDT,
+        TRXDOWNUSDT,
+        XRPUPUSDT,
+        XRPDOWNUSDT,
+        DOTUPUSDT,
+        DOTDOWNUSDT,
+        USDTNGN,
+        BELUSDT,
+        WINGUSDT,
+        LTCUPUSDT,
+        LTCDOWNUSDT,
+        UNIUSDT,
+        NBSUSDT,
+        OXTUSDT,
+        SUNUSDT,
+        AVAXUSDT,
+        HNTUSDT,
+        FLMUSDT,
+        UNIUPUSDT,
+        UNIDOWNUSDT,
+        ORNUSDT,
+        UTKUSDT,
+        XVSUSDT,
+        ALPHAUSDT,
+        USDTBRL,
+        AAVEUSDT,
+        NEARUSDT,
+        SXPUPUSDT,
+        SXPDOWNUSDT,
+        FILUSDT,
+        FILUPUSDT,
+        FILDOWNUSDT,
+        YFIUPUSDT,
+        YFIDOWNUSDT,
+        INJUSDT,
+        AUDIOUSDT,
+        CTKUSDT,
+        BCHUPUSDT,
+        BCHDOWNUSDT,
+        AKROUSDT,
+        AXSUSDT,
+        HARDUSDT,
+        DNTUSDT,
+        STRAXUSDT,
+        UNFIUSDT,
+        ROSEUSDT,
+        AVAUSDT,
+        XEMUSDT,
+        AAVEUPUSDT,
+        AAVEDOWNUSDT,
+        SKLUSDT,
+        SUSDUSDT,
+        SUSHIUPUSDT,
+        SUSHIDOWNUSDT,
+        XLMUPUSDT,
+        XLMDOWNUSDT,
+        GRTUSDT,
+        JUVUSDT,
+        PSGUSDT,
+        USDTBVND,
+       //1INCHUSDT,
+        REEFUSDT,
+        OGUSDT,
+        ATMUSDT,
+        ASRUSDT,
+        CELOUSDT,
+        RIFUSDT,
+        BTCSTUSDT,
+        TRUUSDT,
+        CKBUSDT,
+        TWTUSDT,
+        FIROUSDT,
+        LITUSDT,
+        SFPUSDT,
+        DODOUSDT,
+        CAKEUSDT,
+        ACMUSDT,
+        BADGERUSDT,
+        FISUSDT,
+        OMUSDT,
+        PONDUSDT,
+        DEGOUSDT,
+        ALICEUSDT,
+        LINAUSDT,
+        PERPUSDT,
+        RAMPUSDT,
+        SUPERUSDT
     }
-
+    [JsonConverter(typeof(StringEnumConverter))]
     public enum TimeFrame
     {
         oneMinute,
@@ -735,6 +1036,24 @@ namespace SqueezeBotConfigurator
             this.Tiker = tiker;
             TimeFrame = timeFrame;
         }
+
+    }
+
+
+    public class ExternalSettings
+    {
+        public bool CalculateStopLoss;
+        public double DefauleStopLoss;
+
+        public TikerAndTimeFrame[] tikersAndFrames;
+
+        [JsonProperty(ItemConverterType = typeof(StringEnumConverter))]
+        public TimeFrame[] availableTimeFrames = new[]
+        {
+            TimeFrame.oneMinute,
+            TimeFrame.threeMinutes,
+            TimeFrame.fiveMinutes
+        };
 
     }
 
