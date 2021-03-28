@@ -7,7 +7,7 @@ using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System.Diagnostics;
-
+using System.Net;
 
 namespace SqueezeBotConfigurator
 {
@@ -16,18 +16,23 @@ namespace SqueezeBotConfigurator
         static void Main(string[] args)
         {
 
+            MainBinanceWithMethod(null);
+
+
+
+            var useParallel = true;
             var directoryPath = @"C:\Users\Nocturne\Desktop\Новая папка (5)";
             var files = Directory.GetFiles(directoryPath, "*.csv");
 
-            var inScopeCandeCount = 1440;
+            var inScopeCandeCount = 1000;
             var configsCount = 10;
 
             var Settings = new BacktestSettings[]
             {
                 new BacktestSettings(TradeOpenTrigger.open)     {configCount = configsCount },
-                new BacktestSettings(TradeOpenTrigger.close)    {configCount = configsCount },
+                new BacktestSettings(TradeOpenTrigger.close)    {configCount = configsCount  },
                 new BacktestSettings(TradeOpenTrigger.openClose){configCount = configsCount },
-                new BacktestSettings(TradeOpenTrigger.high)     {configCount = configsCount },
+                new BacktestSettings(TradeOpenTrigger.high)     {configCount = configsCount  },
                 new BacktestSettings(TradeOpenTrigger.low)      {configCount = configsCount },
                 new BacktestSettings(TradeOpenTrigger.highLow)  {configCount = configsCount }
             };
@@ -41,55 +46,54 @@ namespace SqueezeBotConfigurator
                 var dataSet = new DataSet(inScopeCandeCount, fileInfo.FullName);
                 var configs = new List<Config>(Settings.Length * configsCount);
 
-                //Многопоточный вызов
-                var tasks = new Task[Settings.Length];
-                var backtests = new BacktestProvider[Settings.Length];
-
-                for (int i = 0; i < tasks.Length; i++)
+                if (useParallel)
                 {
-                    var backtest = new BacktestProvider(Settings[i], dataSet);
-                    backtests[i] = backtest;
+                    //Многопоточный вызов
+                    var tasks = new Task[Settings.Length];
+                    var backtests = new Backtest[Settings.Length];
 
-                    Action currentTest;
-                    if (Settings[i].calculateStop)
-                        currentTest = () => { backtest.RunTestCalculatedStop(); };
-                    else
-                        currentTest = () => { backtest.RunTestDefaltStop(); };
+                    for (int i = 0; i < tasks.Length; i++)
+                    {
+                        var backtest = new Backtest(Settings[i], dataSet);
+                        backtests[i] = backtest;
+
+                        Action currentTest;
+                        if (Settings[i].calculateStop)
+                            currentTest = () => { backtest.RunTestCalculatedStop(); };
+                        else
+                            currentTest = () => { backtest.RunTestDefaltStop(); };
 
 
-                    tasks[i] = new Task(currentTest);
-                    tasks[i].Start();
+                        tasks[i] = new Task(currentTest);
+                        tasks[i].Start();
+                    }
+                    Task.WaitAll(tasks);
+
+                    for (int i = 0; i < tasks.Length; i++)
+                    {
+                        configs.AddRange(backtests[i].Configs);
+                    }
                 }
-                Task.WaitAll(tasks);
-
-                for (int i = 0; i < tasks.Length; i++)
+                else
                 {
-                    configs.AddRange(backtests[i].Configs);
+                    //Однопоточный вызов
+                    for (int i = 0; i < Settings.Length; i++)
+                    {
+                        var currentTest = new Backtest(Settings[i], dataSet);
+                        if (Settings[i].calculateStop)
+                            currentTest.RunTestCalculatedStop();
+                        else
+                            currentTest.RunTestDefaltStop();
+
+                        configs.AddRange(currentTest.Configs);
+                    }
+
                 }
-
-                ////Однопоточный вызов
-                //for (int i = 0; i < Settings.Length; i++)
-                //{
-                //    var currentTest = new BacktestProvider(Settings[i], dataSet);
-                //    if (Settings[i].calculateStop)
-                //        currentTest.RunTestCalculatedStop();
-                //    else
-                //        currentTest.RunTestDefaltStop();
-
-                //    configs.AddRange(currentTest.Configs);
-                //}
-
-
 
                 //configs.ForEach(x => x.WriteStatistic());
 
                 //Console.ReadKey();
                 //return;
-
-
-
-
-
 
 
 
@@ -114,21 +118,280 @@ namespace SqueezeBotConfigurator
 
 
 
+            //Mainbin(null);
+           
 
 
             //var result = stricts.Test(dataSet,100);
             //result.ForEach(x => x.WriteStatistic());
             //Console.ReadKey();
         }
+
+        static void MainWithBinanceRequest(string[] args)
+        {
+            var files = new[]
+            {
+                     new{  tiker = Tiker.STORJUSDT,TimeFrame = TimeFrame.oneMinute },
+            };
+
+            var useParallel = true;//
+            var inScopeCandeCount = 1000;//
+            var configsCount = 10;//
+            var directoryPath = @"C:\Users\Nocturne\Desktop\Новая папка (5)";//
+
+
+            var Settings = new BacktestSettings[]//
+            {
+                new BacktestSettings(TradeOpenTrigger.open)     {configCount = configsCount },
+                new BacktestSettings(TradeOpenTrigger.close)    {configCount = configsCount  },
+                new BacktestSettings(TradeOpenTrigger.openClose){configCount = configsCount },
+                new BacktestSettings(TradeOpenTrigger.high)     {configCount = configsCount  },
+                new BacktestSettings(TradeOpenTrigger.low)      {configCount = configsCount },
+                new BacktestSettings(TradeOpenTrigger.highLow)  {configCount = configsCount }
+            };
+
+            var reports = new List<BacktestReport>(files.Count() * Settings.Length);//
+            var date = DateTime.Now.ToString();//
+
+
+
+            foreach (var file in files)
+            {
+                var dataSet = new DataSet(inScopeCandeCount, file.tiker, file.TimeFrame);
+                var configs = new List<Config>(Settings.Length * configsCount);//
+
+
+
+                if (useParallel)//
+                {
+                    //Многопоточный вызов
+                    var tasks = new Task[Settings.Length];
+                    var backtests = new Backtest[Settings.Length];
+
+                    for (int i = 0; i < tasks.Length; i++)
+                    {
+                        var backtest = new Backtest(Settings[i], dataSet);
+                        backtests[i] = backtest;
+
+                        Action currentTest;
+                        if (Settings[i].calculateStop)
+                            currentTest = () => { backtest.RunTestCalculatedStop(); };
+                        else
+                            currentTest = () => { backtest.RunTestDefaltStop(); };
+
+
+                        tasks[i] = new Task(currentTest);
+                        tasks[i].Start();
+                    }
+                    Task.WaitAll(tasks);
+
+                    for (int i = 0; i < tasks.Length; i++)
+                    {
+                        configs.AddRange(backtests[i].Configs);
+                    }
+                }
+                else
+                {
+                    //Однопоточный вызов
+                    for (int i = 0; i < Settings.Length; i++)
+                    {
+                        var currentTest = new Backtest(Settings[i], dataSet);
+                        if (Settings[i].calculateStop)
+                            currentTest.RunTestCalculatedStop();
+                        else
+                            currentTest.RunTestDefaltStop();
+
+                        configs.AddRange(currentTest.Configs);
+                    }
+
+                }
+
+                //configs.ForEach(x => x.WriteStatistic());
+
+                //Console.ReadKey();
+                //return;
+
+
+
+                var backtestReport = new BacktestReport()//
+                {
+                    Date = date,
+                    FileName = file.tiker.ToString(),//--
+                    Configs = configs,
+                    CandleCount = inScopeCandeCount
+                };
+                reports.Add(backtestReport);
+            }
+
+
+            var jsonFilePath = directoryPath + @"\SqResult1.json";
+            using (StreamWriter file = File.CreateText(jsonFilePath))
+            {
+                JsonSerializer serializer = new JsonSerializer();
+                serializer.Formatting = Formatting.Indented;
+                serializer.Serialize(file, reports);
+            }
+
+
+
+
+
+            //var result = stricts.Test(dataSet,100);
+            //result.ForEach(x => x.WriteStatistic());
+            //Console.ReadKey();
+        }
+
+        static BacktestReport CreatReport(BacktestSettings[] Settings, DataSet dataSet, string reportName, string creationTime, bool useMultiThreading = true, int inScopeCandeCount = 1000)
+        {
+
+            var configsCount = Settings.Sum(x => x.configCount);
+            var configs = new List<Config>(configsCount);
+            if (useMultiThreading)//
+            {
+                //Многопоточный вызов
+                var tasks = new Task[Settings.Length];
+                var backtests = new Backtest[Settings.Length];
+
+                for (int i = 0; i < tasks.Length; i++)
+                {
+                    var backtest = new Backtest(Settings[i], dataSet);
+                    backtests[i] = backtest;
+                    Action currentTest;
+                    if (Settings[i].calculateStop)
+                        currentTest = () => { backtest.RunTestCalculatedStop(); };
+                    else
+                        currentTest = () => { backtest.RunTestDefaltStop(); };
+                    tasks[i] = new Task(currentTest);
+                    tasks[i].Start();
+                }
+                Task.WaitAll(tasks);
+
+                for (int i = 0; i < tasks.Length; i++)
+                {
+                    configs.AddRange(backtests[i].Configs);
+                }
+            }
+            else
+            {
+                //Однопоточный вызов
+                for (int i = 0; i < Settings.Length; i++)
+                {
+                    var currentTest = new Backtest(Settings[i], dataSet);
+                    if (Settings[i].calculateStop)
+                        currentTest.RunTestCalculatedStop();
+                    else
+                        currentTest.RunTestDefaltStop();
+
+                    configs.AddRange(currentTest.Configs);
+                }
+
+            }
+
+
+            return new BacktestReport()//
+            {
+                Date = creationTime,
+                FileName = reportName,
+                Configs = configs,
+                CandleCount = inScopeCandeCount
+            };
+        }
+
+        static void MainCSVWithMethod(string[] args)
+        {
+            var directoryPath = @"C:\Users\Nocturne\Desktop\Новая папка (5)";
+            var files = Directory.GetFiles(directoryPath, "*.csv");
+
+            var inScopeCandeCount = 1000;
+            var configsCount = 10;
+            var Settings = new BacktestSettings[]
+            {
+                new BacktestSettings(TradeOpenTrigger.open)     {configCount = configsCount },
+                new BacktestSettings(TradeOpenTrigger.close)    {configCount = configsCount  },
+                new BacktestSettings(TradeOpenTrigger.openClose){configCount = configsCount },
+                new BacktestSettings(TradeOpenTrigger.high)     {configCount = configsCount  },
+                new BacktestSettings(TradeOpenTrigger.low)      {configCount = configsCount },
+                new BacktestSettings(TradeOpenTrigger.highLow)  {configCount = configsCount }
+            };
+
+            var reports = new List<BacktestReport>(files.Count() * Settings.Length);
+            var creationTime = DateTime.Now.ToString();
+            foreach (var file in files)
+            {
+                var fileInfo = new FileInfo(file);
+                var dataSet = new DataSet(inScopeCandeCount, fileInfo.FullName);
+                var configs = new List<Config>(Settings.Length * configsCount);
+                var backtestReport = CreatReport(Settings, dataSet, fileInfo.Name, creationTime);
+                reports.Add(backtestReport);
+            }
+
+
+            var jsonFilePath = directoryPath + @"\SqResult.json";
+            using (StreamWriter file = File.CreateText(jsonFilePath))
+            {
+                JsonSerializer serializer = new JsonSerializer();
+                serializer.Formatting = Formatting.Indented;
+                serializer.Serialize(file, reports);
+            }
+
+        }
+
+        static void MainBinanceWithMethod(string[] args)
+        {
+
+            var files = new[]
+           {
+                     new TikerAndTimeFrame(   Tiker.STORJUSDT, TimeFrame.oneMinute ),
+            };
+            var directoryPath = @"C:\Users\Nocturne\Desktop\Новая папка (5)";
+
+            var inScopeCandeCount = 1000;
+            var configsCount = 10;
+            var Settings = new BacktestSettings[]
+            {
+                new BacktestSettings(TradeOpenTrigger.open)     {configCount = configsCount },
+                new BacktestSettings(TradeOpenTrigger.close)    {configCount = configsCount  },
+                new BacktestSettings(TradeOpenTrigger.openClose){configCount = configsCount },
+                new BacktestSettings(TradeOpenTrigger.high)     {configCount = configsCount  },
+                new BacktestSettings(TradeOpenTrigger.low)      {configCount = configsCount },
+                new BacktestSettings(TradeOpenTrigger.highLow)  {configCount = configsCount }
+            };
+
+            var reports = new List<BacktestReport>(files.Count() * Settings.Length);
+            var creationTime = DateTime.Now.ToString();
+            foreach (var file in files)
+            {
+                var dataSet = new DataSet(inScopeCandeCount, file.Tiker, file.TimeFrame);
+                if (!dataSet.initCorrect) continue;
+                var configs = new List<Config>(Settings.Length * configsCount);
+                var backtestReport = CreatReport(Settings, dataSet, $"{file.Tiker} {file.TimeFrame.AsQuery()}", creationTime);
+                reports.Add(backtestReport);
+            }
+
+            var jsonFilePath = directoryPath + @"\SqResult1.json";
+            using (StreamWriter file = File.CreateText(jsonFilePath))
+            {
+                JsonSerializer serializer = new JsonSerializer();
+                serializer.Formatting = Formatting.Indented;
+                serializer.Serialize(file, reports);
+            }
+
+        }
+
     }
 
 
-    public class BacktestProvider
+
+
+
+
+
+    public class Backtest
     {
         public BacktestSettings Settings;
         public DataSet Data;
         public List<Config> Configs { get; private set; }
-        public BacktestProvider(BacktestSettings settings, DataSet data)
+        public Backtest(BacktestSettings settings, DataSet data)
         {
             Settings = settings;
             Data = data;
@@ -211,6 +474,7 @@ namespace SqueezeBotConfigurator
 
         public void RunTest(DataSet data, TradeOpenTrigger tradeOpenTrigger)
         {
+            this.tradeOpenTrigger = tradeOpenTrigger;
             double[] triggerPrice = data.tradeOpenTriggerValues[(int)tradeOpenTrigger];
             for (int currentCandleIndex = 1; currentCandleIndex < data.inScopeCandeCount - 1; currentCandleIndex++)
             {
@@ -275,14 +539,59 @@ namespace SqueezeBotConfigurator
         public double[] openCloseAverage;
         public double[] highLowAverage;
         public int inScopeCandeCount;
-        private string Path { get; set; }
+        public bool initCorrect = true;
+        private string Path { get; set; }//передавать напрямую в метод 
         public double[][] tradeOpenTriggerValues = new double[6][];
 
         public DataSet(int candleCount, string path)
         {
             Path = path;
             this.inScopeCandeCount = candleCount;
+            InitArrays(candleCount);
+            FillDataSet();
+        }
 
+        public DataSet(int candleCount, Tiker tiker, TimeFrame timeFrame)
+        {
+            this.inScopeCandeCount = candleCount;
+            var requestCandle = 1000;
+            InitArrays(requestCandle);
+
+            WebRequest myRequest = WebRequest.Create($"https://api.binance.com/api/v3/klines?symbol={tiker.ToString()}&interval={timeFrame.AsQuery()}&limit={requestCandle}");
+            WebResponse myResponse;
+
+            try
+            {
+                myResponse = myRequest.GetResponse();
+            }
+            catch (Exception)
+            {
+                Console.Write($"Ошибка в запросе данных {tiker}");
+                initCorrect = false;
+                return;
+            }
+
+            using (Stream stream = myResponse.GetResponseStream())
+            {
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    var content = reader.ReadLine();
+                    var extractedDate = JsonConvert.DeserializeObject<double[][]>(content);
+                    for (int i = 0; i < extractedDate.Length; i++)
+                    {
+                        open[i] = extractedDate[i][1];
+                        high[i] = extractedDate[i][2];
+                        low[i] = extractedDate[i][3];
+                        close[i] = extractedDate[i][4];
+                        openCloseAverage[i] = (open[i] + close[i]) / 2;
+                        highLowAverage[i] = (high[i] + low[i]) / 2;
+                    }
+                }
+            }
+        }
+
+        public void InitArrays(int inScopeCandeCount)
+        {
             low = new double[inScopeCandeCount];
             close = new double[inScopeCandeCount];
             open = new double[inScopeCandeCount];
@@ -296,8 +605,6 @@ namespace SqueezeBotConfigurator
             tradeOpenTriggerValues[3] = high;
             tradeOpenTriggerValues[4] = openCloseAverage;
             tradeOpenTriggerValues[5] = highLowAverage;
-
-            FillDataSet();
         }
 
         private void FillDataSet()
@@ -391,4 +698,46 @@ namespace SqueezeBotConfigurator
         public BacktestSettings BacktestSettings;
         public string Date;
     }
+
+    public enum Tiker
+    {
+        ALICEUSDT,
+        BNBUSDT,
+        STORJUSDT
+
+    }
+
+    public enum TimeFrame
+    {
+        oneMinute,
+        threeMinutes,
+        fiveMinutes
+    }
+
+    public static class TimeFrameExtensions
+    {
+        public static string AsQuery(this TimeFrame timeFrame)
+        {
+            if (timeFrame == TimeFrame.oneMinute) return "1m";
+            if (timeFrame == TimeFrame.threeMinutes) return "3m";
+            if (timeFrame == TimeFrame.fiveMinutes) return "5m";
+            return null;
+        }
+
+    }
+
+    public class TikerAndTimeFrame
+    {
+        public Tiker Tiker { get; set; }
+        public TimeFrame TimeFrame { get; set; }
+        public TikerAndTimeFrame(Tiker tiker, TimeFrame timeFrame)
+        {
+            this.Tiker = tiker;
+            TimeFrame = timeFrame;
+        }
+
+    }
+
+
+
 }
