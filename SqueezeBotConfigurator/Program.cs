@@ -448,8 +448,8 @@ namespace SqueezeBotConfigurator
 
                 }
             }
-            Configs = bestConfigs.OrderByDescending(x => x.takeCount).ThenBy(x => x.stopCount).ThenBy(x => x.tradeOpenTrigger).ToList();
-
+            //Configs = bestConfigs.OrderByDescending(x => x.takeCount).ThenBy(x => x.stopCount).ThenBy(x => x.tradeOpenTrigger).ToList();
+            Configs = bestConfigs.OrderByDescending(x => x.totalProfit).ThenBy(x => x.stopCount).ThenBy(x => x.takeCount).ThenBy(x=>x.tradeOpenTrigger).ToList();
         }
 
         public void RunTestCalculatedStop()
