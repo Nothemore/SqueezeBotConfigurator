@@ -391,6 +391,7 @@ namespace SqueezeBotConfigurator
                 var backtestReport = CreatReport(Settings, dataSet, $"{file.Tiker} {file.TimeFrame.AsQuery()}", creationTime);
                 reports.Add(backtestReport);
                 Console.WriteLine($"Расчет завершен {currentPairIndex}/{totalPairCount}");
+                currentPairIndex++;
             }
 
             var jsonFilePath = directoryPath + @"\SqResult.json";
@@ -683,8 +684,8 @@ namespace SqueezeBotConfigurator
         public double sellTriggerStep = 0.01;
 
         public double stopTriggerMin = 2;
-        public double stopTriggerMax = 8;
-        public double stopTriggerStep = 0.1;
+        public double stopTriggerMax = 5;
+        public double stopTriggerStep = 0.05;
         public double stopTriggerDefaul = 5;
         public bool useStopLoss = true;
         public bool calculateStop = true;
