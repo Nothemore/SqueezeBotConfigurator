@@ -9,6 +9,7 @@ using Newtonsoft.Json.Converters;
 using System.Diagnostics;
 using System.Net;
 using System.Reflection;
+using System.Threading;
 
 namespace SqueezeBotConfigurator
 {
@@ -103,7 +104,7 @@ namespace SqueezeBotConfigurator
             BacktestSettings[] Settings;
             var configsCount = 10;
             var totalSearch = false;
-       
+
 
             if (readWriteCondition.FromExternalFile)
             {
@@ -116,8 +117,9 @@ namespace SqueezeBotConfigurator
             {
                 files = new TikerAndTimeFrame[]
                      {
-                        new TikerAndTimeFrame(Tiker.DENTUSDT,TimeFrame.oneMinute)
-
+                        new TikerAndTimeFrame(Tiker.DENTUSDT,TimeFrame.oneMinute),
+                        new TikerAndTimeFrame(Tiker.FILUSDT,TimeFrame.oneMinute),
+                        new TikerAndTimeFrame(Tiker.ANKRUSDT,TimeFrame.oneMinute)
 
                      };
                 Settings = new BacktestSettings[]
@@ -146,15 +148,23 @@ namespace SqueezeBotConfigurator
                 {
                     using (StreamReader reader = new StreamReader(stream))
                     {
+                        var volumeFilter = 70 * Math.Pow(10, 6);
                         var test = reader.ReadLine();
                         Baka[] account = JsonConvert.DeserializeObject<Baka[]>(test);
                         var counter = 0;
+
+                        account = account.Where(x => x.symbol.Contains("USDT")).ToArray();
+                        var asda = account[0];
+                        account = account.Where(x => x.quoteVolume > volumeFilter).ToArray();
+                        asda = account[0];
+
+                        account = account.Where(x => x.symbol.Substring(x.symbol.Length - 4) == "USDT").ToArray();
                         foreach (var item in account)
                         {
                             if (item.symbol.Contains("USDT")
-                                &&!item.symbol.Contains("UPUSDT")
+                                && !item.symbol.Contains("UPUSDT")
                                 && !item.symbol.Contains("DOWNUSDT")
-                                &&item.volume>70000)
+                                && item.quoteVolume > volumeFilter)
                             {
                                 Tiker result;
                                 if (Enum.TryParse(item.symbol, out result))
@@ -164,17 +174,19 @@ namespace SqueezeBotConfigurator
 
                                 }
                             }
-                            
+
                         }
                         Console.WriteLine(counter);
+                        Thread.Sleep(60000);
                         files = fileToScan.ToArray();
                         Console.ReadKey();
+
                     }
                 }
             }
 
 
-            
+
 
 
 
@@ -195,14 +207,14 @@ namespace SqueezeBotConfigurator
                 if (!dataSet.initCorrect) continue;
                 var configs = new List<Config>(Settings.Length * configsCount);
                 var backtestReport = CreatReport(Settings, dataSet, $"{file.Tiker} {file.TimeFrame.AsQuery()}", creationTime);
-               
+                if (backtestReport.Configs.All(x => x.takeCount == 0)) continue;
                 Console.WriteLine($"Расчет завершен {currentPairIndex}/{totalPairCount}");
                 currentPairIndex++;
 
                 if (totalSearch)
                 {
                     topConfigsInMarket.AddRange(backtestReport.Configs);
-                    topConfigsInMarket = topConfigsInMarket.OrderByDescending(x => x.totalProfit).ThenBy(x => x.stopCount).ThenBy(x => x.takeCount).ThenBy(x => x.tradeOpenTrigger).Take(100).ToList();
+                    topConfigsInMarket = topConfigsInMarket.OrderBy(x=>x.takeCount/x.stopCount).ThenByDescending(x=>x.totalProfit).Take(100).ToList();
                 }
                 else
                 {
@@ -333,7 +345,7 @@ namespace SqueezeBotConfigurator
                     currentConfig.sellTrigger = sellTrigger;
                     currentConfig.RunTest(Data, Settings.tradeOpenTrigger);
                     currentConfig.tiker = Data.tiker;
-                    
+
                     //Console.WriteLine($"{currentConfig.buyTrigger}  {currentConfig.sellTrigger}  {currentConfig.stopTrigger}    {currentConfig.totalProfit}");
 
                     bestConfigs.Add(currentConfig);
@@ -372,7 +384,7 @@ namespace SqueezeBotConfigurator
         public double stopTrigger;
         public double totalProfit = 100;
         public int takeCount;
-        public int stopCount;
+        public int stopCount = -1;
         public Tiker tiker;
         [JsonConverter(typeof(StringEnumConverter))]
         public TradeOpenTrigger tradeOpenTrigger;
@@ -438,7 +450,8 @@ namespace SqueezeBotConfigurator
                     isDealOpen = false;
                     totalProfit *= (1 - (stopTrigger + comsa) / 100);
                     closeCandleIndex = currentCandleIndex;
-                    stopCount++;
+                    if (stopCount == -1) stopCount = 1;
+                    else stopCount++;
                 }
 
             }
@@ -587,7 +600,7 @@ namespace SqueezeBotConfigurator
 
         public double stopTriggerMin = 1;
         public double stopTriggerMax = 5;
-        public double stopTriggerStep = 0.01;
+        public double stopTriggerStep = 0.1;
         public double stopTriggerDefaul = 5;
         public bool useStopLoss = true;
         public bool calculateStop = true;
