@@ -16,7 +16,7 @@ namespace SqueezeBotConfigurator
     {
         static void Main(string[] args)
         {
-            MainProd(null);
+            MainInDev(null);
         }
 
 
@@ -25,276 +25,11 @@ namespace SqueezeBotConfigurator
 
 
 
-        static void MainCSVold(string[] args)
-        {
 
 
 
 
 
-            MainProd(null);
-
-            return;
-
-            var useParallel = true;
-            var directoryPath = @"C:\Users\Nocturne\Desktop\Новая папка (5)";
-            var files = Directory.GetFiles(directoryPath, "*.csv");
-
-            var inScopeCandeCount = 1000;
-            var configsCount = 10;
-
-            var Settings = new BacktestSettings[]
-            {
-                new BacktestSettings(TradeOpenTrigger.open)     {configCount = configsCount },
-                new BacktestSettings(TradeOpenTrigger.close)    {configCount = configsCount  },
-                new BacktestSettings(TradeOpenTrigger.openClose){configCount = configsCount },
-                new BacktestSettings(TradeOpenTrigger.high)     {configCount = configsCount  },
-                new BacktestSettings(TradeOpenTrigger.low)      {configCount = configsCount },
-                new BacktestSettings(TradeOpenTrigger.highLow)  {configCount = configsCount }
-            };
-
-            var reports = new List<BacktestReport>(files.Count() * Settings.Length);
-            var date = DateTime.Now.ToString();
-
-            foreach (var file in files)
-            {
-                var fileInfo = new FileInfo(file);
-                var dataSet = new DataSet(inScopeCandeCount, fileInfo.FullName);
-                var configs = new List<Config>(Settings.Length * configsCount);
-
-                if (useParallel)
-                {
-                    //Многопоточный вызов
-                    var tasks = new Task[Settings.Length];
-                    var backtests = new Backtest[Settings.Length];
-
-                    for (int i = 0; i < tasks.Length; i++)
-                    {
-                        var backtest = new Backtest(Settings[i], dataSet);
-                        backtests[i] = backtest;
-
-                        Action currentTest;
-                        if (Settings[i].calculateStop)
-                            currentTest = () => { backtest.RunTestCalculatedStop(); };
-                        else
-                            currentTest = () => { backtest.RunTestDefaltStop(); };
-
-
-                        tasks[i] = new Task(currentTest);
-                        tasks[i].Start();
-                    }
-                    Task.WaitAll(tasks);
-
-                    for (int i = 0; i < tasks.Length; i++)
-                    {
-                        configs.AddRange(backtests[i].Configs);
-                    }
-                }
-                else
-                {
-                    //Однопоточный вызов
-                    for (int i = 0; i < Settings.Length; i++)
-                    {
-                        var currentTest = new Backtest(Settings[i], dataSet);
-                        if (Settings[i].calculateStop)
-                            currentTest.RunTestCalculatedStop();
-                        else
-                            currentTest.RunTestDefaltStop();
-
-                        configs.AddRange(currentTest.Configs);
-                    }
-
-                }
-
-                //configs.ForEach(x => x.WriteStatistic());
-
-                //Console.ReadKey();
-                //return;
-
-
-
-                var backtestReport = new BacktestReport()
-                {
-                    Date = date,
-                    FileName = fileInfo.Name,
-                    Configs = configs,
-                    CandleCount = inScopeCandeCount
-                };
-                reports.Add(backtestReport);
-            }
-
-
-            var jsonFilePath = directoryPath + @"\SqResult.json";
-            using (StreamWriter file = File.CreateText(jsonFilePath))
-            {
-                JsonSerializer serializer = new JsonSerializer();
-                serializer.Formatting = Formatting.Indented;
-                serializer.Serialize(file, reports);
-            }
-
-
-
-            //Mainbin(null);
-
-
-
-            //var result = stricts.Test(dataSet,100);
-            //result.ForEach(x => x.WriteStatistic());
-            //Console.ReadKey();
-        }
-
-        static void MainWithBinanceRequest(string[] args)
-        {
-            var files = new[]
-            {
-                     new{  tiker = Tiker.STORJUSDT,TimeFrame = TimeFrame.oneMinute },
-            };
-
-            var useParallel = true;//
-            var inScopeCandeCount = 1000;//
-            var configsCount = 10;//
-            var directoryPath = @"C:\Users\Nocturne\Desktop\Новая папка (5)";//
-
-
-            var Settings = new BacktestSettings[]//
-            {
-                new BacktestSettings(TradeOpenTrigger.open)     {configCount = configsCount },
-                new BacktestSettings(TradeOpenTrigger.close)    {configCount = configsCount  },
-                new BacktestSettings(TradeOpenTrigger.openClose){configCount = configsCount },
-                new BacktestSettings(TradeOpenTrigger.high)     {configCount = configsCount  },
-                new BacktestSettings(TradeOpenTrigger.low)      {configCount = configsCount },
-                new BacktestSettings(TradeOpenTrigger.highLow)  {configCount = configsCount }
-            };
-
-            var reports = new List<BacktestReport>(files.Count() * Settings.Length);//
-            var date = DateTime.Now.ToString();//
-
-
-
-            foreach (var file in files)
-            {
-                var dataSet = new DataSet(inScopeCandeCount, file.tiker, file.TimeFrame);
-                var configs = new List<Config>(Settings.Length * configsCount);//
-
-
-
-                if (useParallel)//
-                {
-                    //Многопоточный вызов
-                    var tasks = new Task[Settings.Length];
-                    var backtests = new Backtest[Settings.Length];
-
-                    for (int i = 0; i < tasks.Length; i++)
-                    {
-                        var backtest = new Backtest(Settings[i], dataSet);
-                        backtests[i] = backtest;
-
-                        Action currentTest;
-                        if (Settings[i].calculateStop)
-                            currentTest = () => { backtest.RunTestCalculatedStop(); };
-                        else
-                            currentTest = () => { backtest.RunTestDefaltStop(); };
-
-
-                        tasks[i] = new Task(currentTest);
-                        tasks[i].Start();
-                    }
-                    Task.WaitAll(tasks);
-
-                    for (int i = 0; i < tasks.Length; i++)
-                    {
-                        configs.AddRange(backtests[i].Configs);
-                    }
-                }
-                else
-                {
-                    //Однопоточный вызов
-                    for (int i = 0; i < Settings.Length; i++)
-                    {
-                        var currentTest = new Backtest(Settings[i], dataSet);
-                        if (Settings[i].calculateStop)
-                            currentTest.RunTestCalculatedStop();
-                        else
-                            currentTest.RunTestDefaltStop();
-
-                        configs.AddRange(currentTest.Configs);
-                    }
-
-                }
-
-                //configs.ForEach(x => x.WriteStatistic());
-
-                //Console.ReadKey();
-                //return;
-
-
-
-                var backtestReport = new BacktestReport()//
-                {
-                    Date = date,
-                    FileName = file.tiker.ToString(),//--
-                    Configs = configs,
-                    CandleCount = inScopeCandeCount
-                };
-                reports.Add(backtestReport);
-            }
-
-
-            var jsonFilePath = directoryPath + @"\SqResult1.json";
-            using (StreamWriter file = File.CreateText(jsonFilePath))
-            {
-                JsonSerializer serializer = new JsonSerializer();
-                serializer.Formatting = Formatting.Indented;
-                serializer.Serialize(file, reports);
-            }
-
-
-
-
-
-            //var result = stricts.Test(dataSet,100);
-            //result.ForEach(x => x.WriteStatistic());
-            //Console.ReadKey();
-        }
-
-        static void MainCSVWithMethod(string[] args)
-        {
-            var directoryPath = @"C:\Users\Nocturne\Desktop\Новая папка (5)";
-            var files = Directory.GetFiles(directoryPath, "*.csv");
-
-            var inScopeCandeCount = 1000;
-            var configsCount = 10;
-            var Settings = new BacktestSettings[]
-            {
-                new BacktestSettings(TradeOpenTrigger.open)     {configCount = configsCount },
-                new BacktestSettings(TradeOpenTrigger.close)    {configCount = configsCount  },
-                new BacktestSettings(TradeOpenTrigger.openClose){configCount = configsCount },
-                new BacktestSettings(TradeOpenTrigger.high)     {configCount = configsCount  },
-                new BacktestSettings(TradeOpenTrigger.low)      {configCount = configsCount },
-                new BacktestSettings(TradeOpenTrigger.highLow)  {configCount = configsCount }
-            };
-
-            var reports = new List<BacktestReport>(files.Count() * Settings.Length);
-            var creationTime = DateTime.Now.ToString();
-            foreach (var file in files)
-            {
-                var fileInfo = new FileInfo(file);
-                var dataSet = new DataSet(inScopeCandeCount, fileInfo.FullName);
-                var configs = new List<Config>(Settings.Length * configsCount);
-                var backtestReport = CreatReport(Settings, dataSet, fileInfo.Name, creationTime);
-                reports.Add(backtestReport);
-            }
-
-
-            var jsonFilePath = directoryPath + @"\SqResult.json";
-            using (StreamWriter file = File.CreateText(jsonFilePath))
-            {
-                JsonSerializer serializer = new JsonSerializer();
-                serializer.Formatting = Formatting.Indented;
-                serializer.Serialize(file, reports);
-            }
-
-        }
 
         static void MainProd(string[] args)
         {
@@ -363,43 +98,43 @@ namespace SqueezeBotConfigurator
 
         static void MainInDev(string[] args)
         {
-            var currentPath = Assembly.GetExecutingAssembly().Location;
-            var path = currentPath.Replace("SqueezeBotConfigurator.exe", "Settings.json");
+            var readWriteCondition = new ReadWriteCondition(false);
+            TikerAndTimeFrame[] files;
+            BacktestSettings[] Settings;
+            var configsCount = 10;
 
-            ExternalSettings externalSetting;
-            using (StreamReader file = File.OpenText(path))
+            if (readWriteCondition.FromExternalFile)
             {
-                JsonSerializer serializer = new JsonSerializer();
-                externalSetting = (ExternalSettings)serializer.Deserialize(file, typeof(ExternalSettings));
+                files = readWriteCondition.tikerAndFrames;
+                Settings = readWriteCondition.Settings;
             }
 
 
-            // var files = new[]
-            //{
-            //          new TikerAndTimeFrame(   Tiker.STORJUSDT, TimeFrame.oneMinute ),
-            // };
+            else
+            {
+                files = new TikerAndTimeFrame[]
+                     {
+                         new TikerAndTimeFrame(Tiker.MTLUSDT,TimeFrame.oneMinute),
+                         new TikerAndTimeFrame(Tiker.STORJUSDT,TimeFrame.oneMinute)
+                     };
+                Settings = new BacktestSettings[]
+                    {
+                         new BacktestSettings(TradeOpenTrigger.open)     {configCount = configsCount},
+                         new BacktestSettings(TradeOpenTrigger.close)    {configCount = configsCount  },
+                         new BacktestSettings(TradeOpenTrigger.openClose){configCount = configsCount},
+                         new BacktestSettings(TradeOpenTrigger.high)     {configCount = configsCount},
+                         new BacktestSettings(TradeOpenTrigger.low)      {configCount = configsCount },
+                         new BacktestSettings(TradeOpenTrigger.highLow)  {configCount = configsCount }
+                     };
 
-            var files = externalSetting.tikersAndFrames;
+
+            }
 
             var totalPairCount = files.Length;
             var currentPairIndex = 0;
             if (totalPairCount > 0) currentPairIndex = 1;
             Console.WriteLine($"Найдено пар - {totalPairCount}");
-
-            //var directoryPath = @"C:\Users\Nocturne\Desktop\Новая папка (5)";
-            var directoryPath = currentPath.Replace(@"\SqueezeBotConfigurator.exe", string.Empty);
-
             var inScopeCandeCount = 1000;
-            var configsCount = 10;
-            var Settings = new BacktestSettings[]
-            {
-                new BacktestSettings(TradeOpenTrigger.open)     {configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss},
-                new BacktestSettings(TradeOpenTrigger.close)    {configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss  },
-                new BacktestSettings(TradeOpenTrigger.openClose){configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss },
-                new BacktestSettings(TradeOpenTrigger.high)     {configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss  },
-                new BacktestSettings(TradeOpenTrigger.low)      {configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss },
-                new BacktestSettings(TradeOpenTrigger.highLow)  {configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss }
-            };
 
             var reports = new List<BacktestReport>(files.Count() * Settings.Length);
             var creationTime = DateTime.Now.ToString();
@@ -409,12 +144,13 @@ namespace SqueezeBotConfigurator
                 if (!dataSet.initCorrect) continue;
                 var configs = new List<Config>(Settings.Length * configsCount);
                 var backtestReport = CreatReport(Settings, dataSet, $"{file.Tiker} {file.TimeFrame.AsQuery()}", creationTime);
+                backtestReport.Configs = backtestReport.Configs.OrderByDescending(x => x.totalProfit).ThenBy(x => x.stopCount).ThenBy(x => x.takeCount).ThenBy(x => x.tradeOpenTrigger).ToList();
                 reports.Add(backtestReport);
                 Console.WriteLine($"Расчет завершен {currentPairIndex}/{totalPairCount}");
                 currentPairIndex++;
             }
 
-            var jsonFilePath = directoryPath + @"\SqResult.json";
+            var jsonFilePath = readWriteCondition.ResultFileFullName;
             using (StreamWriter file = File.CreateText(jsonFilePath))
             {
                 JsonSerializer serializer = new JsonSerializer();
@@ -517,10 +253,14 @@ namespace SqueezeBotConfigurator
                     currentConfig.buyTrigger = buyTrigger;
                     currentConfig.sellTrigger = sellTrigger;
                     currentConfig.RunTest(Data, Settings.tradeOpenTrigger);
+
+
                     bestConfigs.Add(currentConfig);
                     //Вопрос о сортировки об отборе элементов передать в сеттенгс
                     //bestConfigs = bestConfigs.OrderByDescending(x => x.totalProfit).Take(Settings.configCount).ToList();
                     bestConfigs = Settings.ConfigFilter(bestConfigs);
+
+
 
                 }
             }
@@ -1141,6 +881,53 @@ namespace SqueezeBotConfigurator
 
     }
 
+    public class ReadWriteCondition
+    {
+        public bool FromExternalFile = false;
+        public string ResultFileFullName;
+        public TikerAndTimeFrame[] tikerAndFrames;
+        public BacktestSettings[] Settings;
+
+        public ReadWriteCondition(bool fromExternalFile)
+        {
+            this.FromExternalFile = fromExternalFile;
+            if (FromExternalFile)
+            {
+                var currentPath = Assembly.GetExecutingAssembly().Location;
+                var path = currentPath.Replace("SqueezeBotConfigurator.exe", "Settings.json");
+
+                ExternalSettings externalSetting;
+                using (StreamReader file = File.OpenText(path))
+                {
+                    JsonSerializer serializer = new JsonSerializer();
+                    externalSetting = (ExternalSettings)serializer.Deserialize(file, typeof(ExternalSettings));
+                }
+                ResultFileFullName = currentPath.Replace(@"\SqueezeBotConfigurator.exe", @"\SqResult.json");
+                tikerAndFrames = externalSetting.tikersAndFrames;
+                var configsCount = 10;
+                var Settings = new BacktestSettings[]
+         {
+                new BacktestSettings(TradeOpenTrigger.open)     {configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss},
+                new BacktestSettings(TradeOpenTrigger.close)    {configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss  },
+                new BacktestSettings(TradeOpenTrigger.openClose){configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss },
+                new BacktestSettings(TradeOpenTrigger.high)     {configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss  },
+                new BacktestSettings(TradeOpenTrigger.low)      {configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss },
+                new BacktestSettings(TradeOpenTrigger.highLow)  {configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss }
+         };
+
+
+
+            }
+            else
+            {
+                ResultFileFullName = @"C:\Users\Nocturne\Desktop\inDev\SqResult.json";
+            }
+
+        }
+
+
+
+    }
 
 
 }
