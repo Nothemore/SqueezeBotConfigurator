@@ -117,9 +117,10 @@ namespace SqueezeBotConfigurator
             {
                 files = new TikerAndTimeFrame[]
                      {
-                        new TikerAndTimeFrame(Tiker.DENTUSDT,TimeFrame.oneMinute),
-                        new TikerAndTimeFrame(Tiker.FILUSDT,TimeFrame.oneMinute),
-                        new TikerAndTimeFrame(Tiker.ANKRUSDT,TimeFrame.oneMinute)
+                    
+                       new TikerAndTimeFrame(Tiker.HOTUSDT,TimeFrame.oneMinute),
+                       new TikerAndTimeFrame(Tiker.HOTUSDT,TimeFrame.threeMinutes),
+                       new TikerAndTimeFrame(Tiker.HOTUSDT,TimeFrame.fiveMinutes),
 
                      };
                 Settings = new BacktestSettings[]
@@ -206,7 +207,7 @@ namespace SqueezeBotConfigurator
                 var dataSet = new DataSet(inScopeCandeCount, file.Tiker, file.TimeFrame);
                 if (!dataSet.initCorrect) continue;
                 var configs = new List<Config>(Settings.Length * configsCount);
-                var backtestReport = CreatReport(Settings, dataSet, $"{file.Tiker} {file.TimeFrame.AsQuery()}", creationTime);
+                var backtestReport = CreatReport(Settings, dataSet, $"{file.Tiker} {file.TimeFrame.AsQuery()}", creationTime,true,inScopeCandeCount);
                 if (backtestReport.Configs.All(x => x.takeCount == 0)) continue;
                 Console.WriteLine($"Расчет завершен {currentPairIndex}/{totalPairCount}");
                 currentPairIndex++;
@@ -590,13 +591,13 @@ namespace SqueezeBotConfigurator
 
     public class BacktestSettings
     {
-        public double buyTriggerMin = 1.2;
-        public double buyTriggerMax = 8;
-        public double buyTriggerStep = 0.1;
+        public double buyTriggerMin = 1.2;//1.2
+        public double buyTriggerMax = 8;//8
+        public double buyTriggerStep = 0.01;
 
-        public double sellTriggerMin = 0.55;
-        public double sellTriggerMax = 5;
-        public double sellTriggerStep = 0.1;
+        public double sellTriggerMin = 0.55;//0.55
+        public double sellTriggerMax = 7;
+        public double sellTriggerStep = 0.01;
 
         public double stopTriggerMin = 1;
         public double stopTriggerMax = 5;
@@ -605,7 +606,7 @@ namespace SqueezeBotConfigurator
         public bool useStopLoss = true;
         public bool calculateStop = true;
 
-        public double buySellRatio = 0.6;
+        public double buySellRatio = 0.4;
         public int configCount = 10;
         public TradeOpenTrigger tradeOpenTrigger;
         public Func<List<Config>, List<Config>> ConfigFilter;
@@ -936,7 +937,9 @@ namespace SqueezeBotConfigurator
     {
         oneMinute,
         threeMinutes,
-        fiveMinutes
+        fiveMinutes,
+        fifteenMinutes,
+        thirtyMinutes
     }
 
     public static class TimeFrameExtensions
@@ -946,6 +949,8 @@ namespace SqueezeBotConfigurator
             if (timeFrame == TimeFrame.oneMinute) return "1m";
             if (timeFrame == TimeFrame.threeMinutes) return "3m";
             if (timeFrame == TimeFrame.fiveMinutes) return "5m";
+            if (timeFrame == TimeFrame.fifteenMinutes) return "15m";
+            if (timeFrame == TimeFrame.thirtyMinutes) return "30m";
             return null;
         }
 
