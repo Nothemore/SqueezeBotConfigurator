@@ -352,6 +352,7 @@ namespace SqueezeBotConfigurator
     {
         public bool CalculateStopLoss;
         public double DefauleStopLoss;
+        public BacktestSettings settings;
 
         public TikerAndTimeFrame[] tikersAndFrames;
 
@@ -414,7 +415,7 @@ namespace SqueezeBotConfigurator
     }
 
 
-    public class Baka
+    public class tikerResponse
     {
         public string symbol;
         public double priceChange;
@@ -435,6 +436,16 @@ namespace SqueezeBotConfigurator
         public int fristId;
         public int lastId28460;
         public int count;
+
+    }
+
+
+    public interface ISource
+    {
+        TikerAndTimeFrame[] TikerFrame { get; set; }
+        BacktestSettings[] Settings { get; set; }
+        string reportPath { get; set; }
+
 
     }
 

@@ -126,7 +126,7 @@ namespace SqueezeBotConfigurator
                     {
                         var volumeFilter = 70 * Math.Pow(10, 6);
                         var test = reader.ReadLine();
-                        Baka[] account = JsonConvert.DeserializeObject<Baka[]>(test);
+                        tikerResponse[] account = JsonConvert.DeserializeObject<tikerResponse[]>(test);
                         var counter = 0;
 
                         account = account.Where(x => x.symbol.Contains("USDT")).ToArray();

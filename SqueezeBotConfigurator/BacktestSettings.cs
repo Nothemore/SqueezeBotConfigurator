@@ -26,7 +26,10 @@ namespace SqueezeBotConfigurator
         public double buySellRatio = 0.4;
         public int configCount = 10;
         public TradeOpenTrigger tradeOpenTrigger;
+
+        [NonSerialized]
         public Func<List<Config>, List<Config>> ConfigFilter;
+        [NonSerialized]
         public Func<Config, bool> ConfigPreFilter;
 
 
@@ -46,6 +49,31 @@ namespace SqueezeBotConfigurator
                 return true;
             };
 
+        }
+
+
+        public BacktestSettings DeepCopy(TradeOpenTrigger tradeTrigger)
+        {
+            var copySettings = new BacktestSettings(tradeTrigger);
+
+            copySettings.buyTriggerMin = buyTriggerMin;
+            copySettings.buyTriggerMax = buyTriggerMax;
+            copySettings.buyTriggerStep = buyTriggerStep;
+
+            copySettings.sellTriggerMin = sellTriggerMin;
+            copySettings.sellTriggerMax = sellTriggerMax;
+            copySettings.sellTriggerStep = sellTriggerStep;
+
+            copySettings.stopTriggerMin = stopTriggerMin;
+            copySettings.stopTriggerMax = stopTriggerMax;
+            copySettings.stopTriggerStep = stopTriggerStep;
+
+            copySettings.stopTriggerDefaul = stopTriggerDefaul;
+            copySettings.useStopLoss = useStopLoss;
+            copySettings.calculateStop = calculateStop;
+            copySettings.buySellRatio =buySellRatio;
+            copySettings.configCount = configCount;
+            return copySettings;
         }
     }
 }

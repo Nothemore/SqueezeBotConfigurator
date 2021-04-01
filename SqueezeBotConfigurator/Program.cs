@@ -18,12 +18,26 @@ namespace SqueezeBotConfigurator
         static void Main(string[] args)
         {
 
-            var set = new BacktestSettings(TradeOpenTrigger.open);
-            var bak = new Backtest(set, null);
-            Console.WriteLine(bak.Configs.Count == 0);
-            Console.ReadKey();
+            //var sette = new ExternalSettings();
+            //sette.settings = new BacktestSettings(TradeOpenTrigger.open);
+            //sette.CalculateStopLoss = true;
+            //sette.DefauleStopLoss = 5;
+            //sette.tikersAndFrames = new[] { new TikerAndTimeFrame(Tiker.ADAUSDT, TimeFrame.oneMinute) };
 
-            return;
+            //var jsonFilePath =@" C:\Users\Nocturne\Desktop\inDev\Settings.json";
+            //using (StreamWriter file = File.CreateText(jsonFilePath))
+            //{
+            //    JsonSerializer serializer = new JsonSerializer();
+            //    serializer.Formatting = Formatting.Indented;
+            //     serializer.Serialize(file,sette);
+            //}
+
+
+
+
+
+
+             
             MainInDev(null);
         }
 
@@ -34,9 +48,11 @@ namespace SqueezeBotConfigurator
         {
 
 
-            TikerAndTimeFrame[] files = null;
-            BacktestSettings[] Settings = null;
-            string outPutFileName = null;
+            ISource source = new SourceFile();
+
+            TikerAndTimeFrame[] files = source.TikerFrame;
+            BacktestSettings[] Settings = source.Settings;
+            string outPutFileName = source.reportPath;
 
             var inScopeCandeCount = 1000;
             var oneSheetTopSize = 100;
@@ -44,7 +60,7 @@ namespace SqueezeBotConfigurator
 
 
             var currentPairIndex = 1;
-            if (files.Length > 0) return;
+            if (files.Length == 0) return;
             Console.WriteLine($"Найдено пар - {files.Length}");
             var reports = new List<BacktestReport>();
             var creationTime = DateTime.Now.ToString();
@@ -55,10 +71,11 @@ namespace SqueezeBotConfigurator
                 var backtestManager = new BacktestManager();
                 var backtestReport = backtestManager.GetReport(Settings, dataSet, $"{file.Tiker} {file.TimeFrame.AsQuery()}", creationTime, true, inScopeCandeCount);
 
-                currentPairIndex++;
+                
                 Console.WriteLine($"Расчет завершен {currentPairIndex}/{files.Length}");
                 if (backtestReport.Configs.All(x => x.takeCount == 0)) continue;
                 reports.Add(backtestReport);
+                currentPairIndex++;
             }
 
             if (mergeInOneSheet)
