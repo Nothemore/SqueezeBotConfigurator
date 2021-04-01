@@ -46,6 +46,7 @@ namespace SqueezeBotConfigurator
                         if (Enum.TryParse(item.symbol, out result))
                             fileToScan.Add(new TikerAndTimeFrame(result, TimeFrame.oneMinute));
                     }
+                    Console.WriteLine("Технический перерыв на 1 минуту");
                     Thread.Sleep(60000);
                     TikerFrame = fileToScan.ToArray();
 

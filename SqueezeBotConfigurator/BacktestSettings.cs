@@ -8,16 +8,16 @@ namespace SqueezeBotConfigurator
 {
     public class BacktestSettings
     {
-        public double buyTriggerMin = 1.2;//1.2
+        public double buyTriggerMin = 3;//1.2
         public double buyTriggerMax = 8;//8
-        public double buyTriggerStep = 0.01;
+        public double buyTriggerStep = 0.05;
 
-        public double sellTriggerMin = 0.55;//0.55
+        public double sellTriggerMin = 1;//0.55
         public double sellTriggerMax = 7;
-        public double sellTriggerStep = 0.01;
+        public double sellTriggerStep = 0.05;
 
-        public double stopTriggerMin = 1;
-        public double stopTriggerMax = 5;
+        public double stopTriggerMin = 2;
+        public double stopTriggerMax = 7;
         public double stopTriggerStep = 0.1;
         public double stopTriggerDefaul = 5;
         public bool useStopLoss = true;
