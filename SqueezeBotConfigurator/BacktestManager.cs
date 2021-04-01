@@ -1,34 +1,74 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using System.Diagnostics;
+using System.Linq;
 using System.Net;
-using System.Reflection;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SqueezeBotConfigurator
 {
-    class Program
+    class BacktestManager
     {
-        static void Main(string[] args)
+
+        public BacktestReport GetReport(BacktestSettings[] Settings, DataSet dataSet, string reportName, string creationTime, bool useMultiThreading = true, int inScopeCandeCount = 1000)
         {
 
-            var set = new BacktestSettings(TradeOpenTrigger.open);
-            var bak = new Backtest(set, null);
-            Console.WriteLine(bak.Configs.Count == 0);
-            Console.ReadKey();
+            var configsCount = Settings.Sum(x => x.configCount);
+            var configs = new List<Config>(configsCount);
+            if (useMultiThreading)//
+            {
+                //Многопоточный вызов
+                var tasks = new Task[Settings.Length];
+                var backtests = new Backtest[Settings.Length];
 
-            return;
-            MainInDev(null);
+                for (int i = 0; i < tasks.Length; i++)
+                {
+                    var backtest = new Backtest(Settings[i], dataSet);
+                    backtests[i] = backtest;
+                    Action currentTest;
+                    if (Settings[i].calculateStop)
+                        currentTest = () => { backtest.RunTestCalculatedStop(); };
+                    else
+                        currentTest = () => { backtest.RunTestDefaltStop(); };
+                    tasks[i] = new Task(currentTest);
+                    tasks[i].Start();
+                }
+                Task.WaitAll(tasks);
+
+                for (int i = 0; i < tasks.Length; i++)
+                {
+                    configs.AddRange(backtests[i].Configs);
+                }
+            }
+            else
+            {
+                //Однопоточный вызов
+                for (int i = 0; i < Settings.Length; i++)
+                {
+                    var currentTest = new Backtest(Settings[i], dataSet);
+                    if (Settings[i].calculateStop)
+                        currentTest.RunTestCalculatedStop();
+                    else
+                        currentTest.RunTestDefaltStop();
+
+                    configs.AddRange(currentTest.Configs);
+                }
+
+            }
+
+
+            return new BacktestReport()
+            {
+                Date = creationTime,
+                FileName = reportName,
+                Configs = configs,
+                CandleCount = inScopeCandeCount
+            };
         }
 
-
-       
 
         static void MainInDev(string[] args)
         {
@@ -192,15 +232,7 @@ namespace SqueezeBotConfigurator
         }
 
 
+
+
     }
-
-    
-
-   
-
-  
-
-   
-
-
 }
