@@ -69,7 +69,6 @@ namespace SqueezeBotConfigurator
             };
         }
 
-
         static void MainInDev(string[] args)
         {
 
