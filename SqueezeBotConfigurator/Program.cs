@@ -20,24 +20,23 @@ namespace SqueezeBotConfigurator
 
             //var sette = new ExternalSettings();
             //sette.settings = new BacktestSettings(TradeOpenTrigger.open);
-            //sette.CalculateStopLoss = true;
-            //sette.DefauleStopLoss = 5;
+
             //sette.tikersAndFrames = new[] { new TikerAndTimeFrame(Tiker.ADAUSDT, TimeFrame.oneMinute) };
 
-            //var jsonFilePath =@" C:\Users\Nocturne\Desktop\inDev\Settings.json";
+            //var jsonFilePath = @" C:\Users\Nocturne\Desktop\inDev\Settings.json";
             //using (StreamWriter file = File.CreateText(jsonFilePath))
             //{
             //    JsonSerializer serializer = new JsonSerializer();
             //    serializer.Formatting = Formatting.Indented;
-            //     serializer.Serialize(file,sette);
+            //    serializer.Serialize(file, sette);
             //}
 
 
 
 
+            //return;
 
 
-             
             MainInDev(null);
         }
 
@@ -47,8 +46,33 @@ namespace SqueezeBotConfigurator
         static void MainInDev(string[] args)
         {
 
+            Console.WriteLine("Выберите источник данных");
+            Console.WriteLine($"\t-введите 1 для чтения данных из кода");
+            Console.WriteLine($"\t-введите 2 для чтения данных из файла");
+            Console.WriteLine($"\t-введите 3 для чтения из интернета");
+            string input = string.Empty;
+            var stateCoplite = true;
+            while (stateCoplite)
+            {
+                input = Console.ReadLine();
+                if (input == "1" || input == "2" || input == "3")
+                    stateCoplite = false;
+                else Console.WriteLine("Введено недопустимое значение");
+            }
 
-            ISource source = new SourceFile();
+            ISource source=null;
+            switch (input)
+            {
+                case "1": source = new SourceCode();
+                    break;
+
+                case "2":
+                    source = new SourceFile();
+                    break;
+                case "3":
+                    source = new SourceWeb();
+                    break;
+            }
 
             TikerAndTimeFrame[] files = source.TikerFrame;
             BacktestSettings[] Settings = source.Settings;
@@ -71,7 +95,7 @@ namespace SqueezeBotConfigurator
                 var backtestManager = new BacktestManager();
                 var backtestReport = backtestManager.GetReport(Settings, dataSet, $"{file.Tiker} {file.TimeFrame.AsQuery()}", creationTime, true, inScopeCandeCount);
 
-                
+
                 Console.WriteLine($"Расчет завершен {currentPairIndex}/{files.Length}");
                 if (backtestReport.Configs.All(x => x.takeCount == 0)) continue;
                 reports.Add(backtestReport);

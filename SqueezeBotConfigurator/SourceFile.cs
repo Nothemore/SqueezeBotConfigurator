@@ -17,7 +17,6 @@ namespace SqueezeBotConfigurator
 
         public SourceFile()
         {
-            int configsCount = 10;
             var currentPath = Assembly.GetExecutingAssembly().Location;
             var path = currentPath.Replace("SqueezeBotConfigurator.exe", "Settings.json");
 
