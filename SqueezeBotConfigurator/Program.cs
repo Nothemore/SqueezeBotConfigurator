@@ -17,6 +17,13 @@ namespace SqueezeBotConfigurator
     {
         static void Main(string[] args)
         {
+
+            var set = new BacktestSettings(TradeOpenTrigger.open);
+            var bak = new Backtest(set, null);
+            Console.WriteLine(bak.Configs.Count == 0);
+            Console.ReadKey();
+
+            return;
             MainInDev(null);
         }
 
@@ -88,7 +95,15 @@ namespace SqueezeBotConfigurator
 
         static void MainInDev(string[] args)
         {
-            //var opendataset = new DataSet(1000, Tiker.TRXUSDT, TimeFrame.oneMinute);
+
+
+            //var opendataset = new DataSet(1000, Tiker.FILUSDT, TimeFrame.oneMinute);
+
+
+
+
+
+
 
             //var configss = new List<Config>();
             //var smallSetting = new BacktestSettings(TradeOpenTrigger.open);
@@ -111,7 +126,7 @@ namespace SqueezeBotConfigurator
             //}
 
 
-            //jsonFilePath1 = @"C:\Users\Nocturne\Desktop\inDev\dataset.json";
+            //var jsonFilePath1 = @"C:\Users\Nocturne\Desktop\inDev\dataset.json";
             //using (StreamWriter file = File.CreateText(jsonFilePath1))
             //{
             //    JsonSerializer serializer = new JsonSerializer();
@@ -126,9 +141,9 @@ namespace SqueezeBotConfigurator
             //Console.ReadKey();
 
 
+            //return;
 
 
-       
 
 
             var readWriteCondition = new ReadWriteCondition(false);
@@ -150,8 +165,8 @@ namespace SqueezeBotConfigurator
                 files = new TikerAndTimeFrame[]
                      {
 
-                         new TikerAndTimeFrame(Tiker.TRXUSDT,TimeFrame.oneMinute),
-                       
+                         new TikerAndTimeFrame(Tiker.FILUSDT,TimeFrame.oneMinute),
+
 
 
                      };
@@ -359,44 +374,36 @@ namespace SqueezeBotConfigurator
         {
             Settings = settings;
             Data = data;
+            Configs = new List<Config>(Settings.configCount + 1);
         }
 
         public void RunTestDefaltStop()
         {
-            var bestConfigs = new List<Config>(Settings.configCount + 1);
             for (double buyTrigger = Settings.buyTriggerMin; buyTrigger <= Settings.buyTriggerMax; buyTrigger += Settings.buyTriggerStep)
             {
                 Settings.sellTriggerMax = buyTrigger * Settings.buySellRatio;
                 for (double sellTrigger = Settings.sellTriggerMin; sellTrigger <= Settings.sellTriggerMax; sellTrigger += Settings.sellTriggerStep)
                 {
-
                     var currentConfig = new Config();
                     currentConfig.useStop = Settings.useStopLoss;
                     currentConfig.stopTrigger = Settings.stopTriggerDefaul;
-                    currentConfig.tradeOpenTrigger = Settings.tradeOpenTrigger;
                     currentConfig.buyTrigger = buyTrigger;
                     currentConfig.sellTrigger = sellTrigger;
+
                     currentConfig.RunTest(Data, Settings.tradeOpenTrigger);
-                    currentConfig.tiker = Data.tiker;
 
-                    //Console.WriteLine($"{currentConfig.buyTrigger}  {currentConfig.sellTrigger}  {currentConfig.stopTrigger}    {currentConfig.totalProfit}");
-
-                    bestConfigs.Add(currentConfig);
-                    //Вопрос о сортировки об отборе элементов передать в сеттенгс
-                    //bestConfigs = bestConfigs.OrderByDescending(x => x.totalProfit).Take(Settings.configCount).ToList();
-                    bestConfigs = Settings.ConfigFilter(bestConfigs);
-
-
-
+                    if (Settings.ConfigPreFilter(currentConfig))
+                    {
+                        Configs.Add(currentConfig);
+                        Configs = Settings.ConfigFilter(Configs);
+                    }
                 }
             }
-            //Configs = bestConfigs.OrderByDescending(x => x.takeCount).ThenBy(x => x.stopCount).ThenBy(x => x.tradeOpenTrigger).ToList();
-            Configs = bestConfigs.OrderByDescending(x => x.totalProfit).ThenBy(x => x.stopCount).ThenBy(x => x.takeCount).ThenBy(x => x.tradeOpenTrigger).ToList();
         }
 
         public void RunTestCalculatedStop()
         {
-            for (double stopTrigger = Settings.stopTriggerMax; stopTrigger >= Settings.stopTriggerMin; stopTrigger -= Settings.stopTriggerStep)
+            for (double stopTrigger = Settings.stopTriggerMin; stopTrigger <= Settings.stopTriggerMax; stopTrigger += Settings.stopTriggerStep)
             {
                 Settings.stopTriggerDefaul = stopTrigger;
                 RunTestDefaltStop();
@@ -417,7 +424,7 @@ namespace SqueezeBotConfigurator
         public double stopTrigger;
         public double totalProfit = 100;
         public int takeCount;
-        public int stopCount=-1;
+        public int stopCount = -1;
         public Tiker tiker;
         [JsonConverter(typeof(StringEnumConverter))]
         public TradeOpenTrigger tradeOpenTrigger;
@@ -448,6 +455,7 @@ namespace SqueezeBotConfigurator
         public void RunTest(DataSet data, TradeOpenTrigger tradeOpenTrigger)
         {
             this.tradeOpenTrigger = tradeOpenTrigger;
+            this.tiker = data.sourceTiker;
             double[] triggerPrice = data.tradeOpenTriggerValues[(int)tradeOpenTrigger];
             for (int currentCandleIndex = 1; currentCandleIndex < data.inScopeCandeCount - 1; currentCandleIndex++)
             {
@@ -516,7 +524,7 @@ namespace SqueezeBotConfigurator
         public bool initCorrect = true;
         private string Path { get; set; }//передавать напрямую в метод 
         public double[][] tradeOpenTriggerValues = new double[6][];
-        public Tiker tiker;
+        public Tiker sourceTiker;
 
         public DataSet(int candleCount, string path)
         {
@@ -529,7 +537,7 @@ namespace SqueezeBotConfigurator
         public DataSet(int candleCount, Tiker tiker, TimeFrame timeFrame)
         {
             this.inScopeCandeCount = candleCount;
-            this.tiker = tiker;
+            this.sourceTiker = tiker;
             var requestCandle = 1000;
             InitArrays(requestCandle);
 
@@ -631,7 +639,7 @@ namespace SqueezeBotConfigurator
         public double sellTriggerMax = 7;
         public double sellTriggerStep = 0.01;
 
-        public double stopTriggerMin = 2;
+        public double stopTriggerMin = 1;
         public double stopTriggerMax = 5;
         public double stopTriggerStep = 0.1;
         public double stopTriggerDefaul = 5;
@@ -642,6 +650,8 @@ namespace SqueezeBotConfigurator
         public int configCount = 10;
         public TradeOpenTrigger tradeOpenTrigger;
         public Func<List<Config>, List<Config>> ConfigFilter;
+        public Func<Config, bool> ConfigPreFilter;
+
 
         public BacktestSettings(TradeOpenTrigger tradeOpenTrigger)
         {
@@ -653,6 +663,12 @@ namespace SqueezeBotConfigurator
                 .Take(configCount)
                 .ToList();
             };
+
+            ConfigPreFilter = (thisConfig) =>
+            {
+                return true;
+            };
+
         }
     }
 
