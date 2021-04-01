@@ -21,17 +21,6 @@ namespace SqueezeBotConfigurator
         }
 
 
-
-
-
-
-
-
-
-
-
-
-
         static void MainProd(string[] args)
         {
             var currentPath = Assembly.GetExecutingAssembly().Location;
@@ -99,6 +88,49 @@ namespace SqueezeBotConfigurator
 
         static void MainInDev(string[] args)
         {
+            //var opendataset = new DataSet(1000, Tiker.TRXUSDT, TimeFrame.oneMinute);
+
+            //var configss = new List<Config>();
+            //var smallSetting = new BacktestSettings(TradeOpenTrigger.open);
+            //for (double stop = 1; stop < 5; stop += 0.1)
+            //{
+            //    smallSetting.stopTriggerDefaul = stop;
+            //    var backtest = new Backtest(smallSetting, opendataset);
+            //    backtest.RunTestDefaltStop();
+            //    configss.AddRange(backtest.Configs);
+            //}
+            //var jsonFilePath1 = @"C:\Users\Nocturne\Desktop\inDev\Comparer.json";
+
+
+
+            //using (StreamWriter file = File.CreateText(jsonFilePath1))
+            //{
+            //    JsonSerializer serializer = new JsonSerializer();
+            //    serializer.Formatting = Formatting.Indented;
+            //    serializer.Serialize(file, configss);
+            //}
+
+
+            //jsonFilePath1 = @"C:\Users\Nocturne\Desktop\inDev\dataset.json";
+            //using (StreamWriter file = File.CreateText(jsonFilePath1))
+            //{
+            //    JsonSerializer serializer = new JsonSerializer();
+            //    serializer.Formatting = Formatting.Indented;
+            //    serializer.Serialize(file, opendataset);
+            //}
+
+
+
+
+            //Console.WriteLine("Работа программы завершена. Нажмите любую клавишу");
+            //Console.ReadKey();
+
+
+
+
+       
+
+
             var readWriteCondition = new ReadWriteCondition(false);
             TikerAndTimeFrame[] files;
             BacktestSettings[] Settings;
@@ -117,10 +149,10 @@ namespace SqueezeBotConfigurator
             {
                 files = new TikerAndTimeFrame[]
                      {
-                    
-                       new TikerAndTimeFrame(Tiker.HOTUSDT,TimeFrame.oneMinute),
-                       new TikerAndTimeFrame(Tiker.HOTUSDT,TimeFrame.threeMinutes),
-                       new TikerAndTimeFrame(Tiker.HOTUSDT,TimeFrame.fiveMinutes),
+
+                         new TikerAndTimeFrame(Tiker.TRXUSDT,TimeFrame.oneMinute),
+                       
+
 
                      };
                 Settings = new BacktestSettings[]
@@ -207,7 +239,7 @@ namespace SqueezeBotConfigurator
                 var dataSet = new DataSet(inScopeCandeCount, file.Tiker, file.TimeFrame);
                 if (!dataSet.initCorrect) continue;
                 var configs = new List<Config>(Settings.Length * configsCount);
-                var backtestReport = CreatReport(Settings, dataSet, $"{file.Tiker} {file.TimeFrame.AsQuery()}", creationTime,true,inScopeCandeCount);
+                var backtestReport = CreatReport(Settings, dataSet, $"{file.Tiker} {file.TimeFrame.AsQuery()}", creationTime, true, inScopeCandeCount);
                 if (backtestReport.Configs.All(x => x.takeCount == 0)) continue;
                 Console.WriteLine($"Расчет завершен {currentPairIndex}/{totalPairCount}");
                 currentPairIndex++;
@@ -215,7 +247,7 @@ namespace SqueezeBotConfigurator
                 if (totalSearch)
                 {
                     topConfigsInMarket.AddRange(backtestReport.Configs);
-                    topConfigsInMarket = topConfigsInMarket.OrderBy(x=>x.takeCount/x.stopCount).ThenByDescending(x=>x.totalProfit).Take(100).ToList();
+                    topConfigsInMarket = topConfigsInMarket.OrderBy(x => x.takeCount / x.stopCount).ThenByDescending(x => x.totalProfit).Take(100).ToList();
                 }
                 else
                 {
@@ -385,7 +417,7 @@ namespace SqueezeBotConfigurator
         public double stopTrigger;
         public double totalProfit = 100;
         public int takeCount;
-        public int stopCount = -1;
+        public int stopCount=-1;
         public Tiker tiker;
         [JsonConverter(typeof(StringEnumConverter))]
         public TradeOpenTrigger tradeOpenTrigger;
@@ -599,7 +631,7 @@ namespace SqueezeBotConfigurator
         public double sellTriggerMax = 7;
         public double sellTriggerStep = 0.01;
 
-        public double stopTriggerMin = 1;
+        public double stopTriggerMin = 2;
         public double stopTriggerMax = 5;
         public double stopTriggerStep = 0.1;
         public double stopTriggerDefaul = 5;
