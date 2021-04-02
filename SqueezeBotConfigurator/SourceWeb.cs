@@ -10,13 +10,13 @@ using System.Threading.Tasks;
 
 namespace SqueezeBotConfigurator
 {
-    class SourceWeb:ISource
+    class SourceWeb : ISource
     {
         public string reportPath { get; set; }
         public BacktestSettings[] Settings { get; set; }
         public TikerAndTimeFrame[] TikerFrame { get; set; }
 
-        public SourceWeb()
+        public SourceWeb(bool fromFileSettings)
         {
 
             var fileToScan = new List<TikerAndTimeFrame>();
@@ -33,12 +33,18 @@ namespace SqueezeBotConfigurator
                     var tikerData = reader.ReadLine();
                     tikerResponse[] account = JsonConvert.DeserializeObject<tikerResponse[]>(tikerData);
 
-                    account
+                    account = account
                         .Where(x => x.symbol.Substring(x.symbol.Length - 4) == "USDT")
                         .Where(x => !x.symbol.Contains("UPUSDT"))
                         .Where(x => !x.symbol.Contains("DOWNUSDT"))
                         .Where(x => x.quoteVolume > volumeFilter)
                         .ToArray();
+
+                    var test = account[account.Length - 1];
+
+                    var test1 = account.Length;
+                    Console.Write(account.Length);
+
                     foreach (var item in account)
                     {
 
@@ -50,16 +56,27 @@ namespace SqueezeBotConfigurator
                     Thread.Sleep(60000);
                     TikerFrame = fileToScan.ToArray();
 
+                    if (fromFileSettings)
+                    {
+                        Settings = new SourceFile().Settings;
 
-                    Settings = new BacktestSettings[]
-                         {
+
+                    }
+                    else
+                    {
+                        Settings = new BacktestSettings[]
+                             {
                              new BacktestSettings(TradeOpenTrigger.open)     {configCount = configsCount},
                              new BacktestSettings(TradeOpenTrigger.close)    {configCount = configsCount  },
                              new BacktestSettings(TradeOpenTrigger.openClose){configCount = configsCount},
                              new BacktestSettings(TradeOpenTrigger.high)     {configCount = configsCount},
                              new BacktestSettings(TradeOpenTrigger.low)      {configCount = configsCount },
                              new BacktestSettings(TradeOpenTrigger.highLow)  {configCount = configsCount }
-                         };
+                             };
+                    }
+
+
+
                     reportPath = @"C:\Users\Nocturne\Desktop\inDev\SqResult.json";
 
 

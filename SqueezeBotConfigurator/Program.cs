@@ -18,6 +18,23 @@ namespace SqueezeBotConfigurator
         static void Main(string[] args)
         {
 
+
+
+           // var tiime = DateTime.UtcNow;
+           // Console.WriteLine((Int32)tiime.Subtract(new DateTime(1970, 1, 1)).TotalSeconds);
+           // //var asdfa = new TimeSpan(0, 0, 1000, 0);
+           //tiime =  tiime.AddMinutes(-1000);
+
+           // Console.WriteLine((Int32)tiime.Subtract(new DateTime(1970, 1, 1)).TotalSeconds);
+
+          
+           // //Int32 unixTimestamp = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+           // //DateTime.UtcNow.AddMinutes(-10);
+
+
+           // //Console.WriteLine(unixTimestamp);
+           // Console.ReadKey();
+
             //var sette = new ExternalSettings();
             //sette.settings = new BacktestSettings(TradeOpenTrigger.open);
 
@@ -70,7 +87,7 @@ namespace SqueezeBotConfigurator
                     source = new SourceFile();
                     break;
                 case "3":
-                    source = new SourceWeb();
+                    source = new SourceWeb(false);
                     break;
             }
 
@@ -97,9 +114,10 @@ namespace SqueezeBotConfigurator
 
 
                 Console.WriteLine($"Расчет завершен {currentPairIndex}/{files.Length}");
+                currentPairIndex++;
                 if (backtestReport.Configs.All(x => x.takeCount == 0)) continue;
                 reports.Add(backtestReport);
-                currentPairIndex++;
+                
             }
 
             if (mergeInOneSheet)
