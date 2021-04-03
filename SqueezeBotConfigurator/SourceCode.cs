@@ -18,18 +18,24 @@ namespace SqueezeBotConfigurator
             TikerFrame = new TikerAndTimeFrame[]
                    {
 
-                         new TikerAndTimeFrame(Tiker.FILUSDT,TimeFrame.oneMinute),
-                         new TikerAndTimeFrame(Tiker.EOSUSDT,TimeFrame.oneMinute),
-                         new TikerAndTimeFrame(Tiker.TRXUSDT,TimeFrame.oneMinute),
-                          new TikerAndTimeFrame(Tiker.DOTUSDT,TimeFrame.oneMinute),
-                           new TikerAndTimeFrame(Tiker.THETAUSDT,TimeFrame.oneMinute),
-                           new TikerAndTimeFrame(Tiker.TFUELUSDT,TimeFrame.oneMinute),
-                           new TikerAndTimeFrame(Tiker.LUNAUSDT,TimeFrame.oneMinute),
-                            new TikerAndTimeFrame(Tiker.ONTUSDT,TimeFrame.oneMinute),
-                             new TikerAndTimeFrame(Tiker.ONEUSDT,TimeFrame.oneMinute),
-                                 new TikerAndTimeFrame(Tiker.ALICEUSDT,TimeFrame.oneMinute),
-                                     new TikerAndTimeFrame(Tiker.LINAUSDT,TimeFrame.oneMinute),
-                                         new TikerAndTimeFrame(Tiker.AUDIOUSDT,TimeFrame.oneMinute),
+                         //new TikerAndTimeFrame(Tiker.WRXUSDT,TimeFrame.oneMinute),
+                         //new TikerAndTimeFrame(Tiker.WRXUSDT,TimeFrame.fiveMinutes),
+                         //  new TikerAndTimeFrame(Tiker.ADAUSDT,TimeFrame.oneMinute),
+                         //new TikerAndTimeFrame(Tiker.ADAUSDT,TimeFrame.fiveMinutes),
+                         //    new TikerAndTimeFrame(Tiker.DENTUSDT,TimeFrame.oneMinute),
+                         //new TikerAndTimeFrame(Tiker.DENTUSDT,TimeFrame.fiveMinutes),
+                         //     new TikerAndTimeFrame(Tiker.THETAUSDT,TimeFrame.oneMinute),
+                         //new TikerAndTimeFrame(Tiker.THETAUSDT,TimeFrame.fiveMinutes),
+                         //         new TikerAndTimeFrame(Tiker.GRTUSDT,TimeFrame.oneMinute),
+                         //new TikerAndTimeFrame(Tiker.GRTUSDT,TimeFrame.fiveMinutes),
+                         //       new TikerAndTimeFrame(Tiker.VETUSDT,TimeFrame.oneMinute),
+                         //new TikerAndTimeFrame(Tiker.VETUSDT,TimeFrame.fiveMinutes),
+                         //         new TikerAndTimeFrame(Tiker.SXPUSDT,TimeFrame.oneMinute),
+                         //new TikerAndTimeFrame(Tiker.SXPUSDT,TimeFrame.fiveMinutes),
+
+                            new TikerAndTimeFrame(Tiker.FILUSDT,TimeFrame.oneMinute),
+                            new TikerAndTimeFrame(Tiker.EOSUSDT,TimeFrame.oneMinute),
+                            new TikerAndTimeFrame(Tiker.ADAUSDT,TimeFrame.oneMinute),
 
                    };
             Settings = new BacktestSettings[]

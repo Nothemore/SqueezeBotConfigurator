@@ -97,7 +97,6 @@ namespace SqueezeBotConfigurator
 
             var inScopeCandeCount = 1000;
             var oneSheetTopSize = 100;
-            var mergeInOneSheet = false;
 
 
             var currentPairIndex = 1;
@@ -120,11 +119,13 @@ namespace SqueezeBotConfigurator
                 
             }
 
-            if (mergeInOneSheet)
+            if (source is SourceWeb)
             {
                 var topConfigs = reports
                     .SelectMany(x => x.Configs)
+                    .Where(x=>x.takeCount>0)
                     .OrderByDescending(x => x.totalProfit)
+                    .ThenByDescending(x=>x.stopCount)
                     .Take(oneSheetTopSize)
                     .ToList();
 

@@ -18,7 +18,7 @@ namespace SqueezeBotConfigurator
 
         public double stopTriggerMin = 1;
         public double stopTriggerMax =3;
-        public double stopTriggerStep = 0.01;
+        public double stopTriggerStep = 0.1;
         public double stopTriggerDefaul = 5;
         public bool useStopLoss = true;
         public bool calculateStop = true;

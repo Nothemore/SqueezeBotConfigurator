@@ -20,7 +20,7 @@ namespace SqueezeBotConfigurator
         {
 
             var fileToScan = new List<TikerAndTimeFrame>();
-            var configsCount = 10;
+            var configsCount = 2;
             WebRequest myRequest = WebRequest.Create($"https://api.binance.com/api/v1/ticker/24hr");
 
             // Return the response.
@@ -29,7 +29,8 @@ namespace SqueezeBotConfigurator
             {
                 using (StreamReader reader = new StreamReader(stream))
                 {
-                    var volumeFilter = 70 * Math.Pow(10, 6);
+                    var volumeFilterMax = 100 * Math.Pow(10, 6);
+                    var volumeFilterMin = 20 * Math.Pow(10, 6);
                     var tikerData = reader.ReadLine();
                     tikerResponse[] account = JsonConvert.DeserializeObject<tikerResponse[]>(tikerData);
 
@@ -37,13 +38,9 @@ namespace SqueezeBotConfigurator
                         .Where(x => x.symbol.Substring(x.symbol.Length - 4) == "USDT")
                         .Where(x => !x.symbol.Contains("UPUSDT"))
                         .Where(x => !x.symbol.Contains("DOWNUSDT"))
-                        .Where(x => x.quoteVolume > volumeFilter)
+                        .Where(x => x.quoteVolume > volumeFilterMin)
+                         .Where(x => x.quoteVolume < volumeFilterMax)
                         .ToArray();
-
-                    var test = account[account.Length - 1];
-
-                    var test1 = account.Length;
-                    Console.Write(account.Length);
 
                     foreach (var item in account)
                     {
@@ -64,14 +61,15 @@ namespace SqueezeBotConfigurator
                     }
                     else
                     {
+                        var settings = new BacktestSettings(TradeOpenTrigger.open) { configCount = configsCount};
                         Settings = new BacktestSettings[]
                              {
-                             new BacktestSettings(TradeOpenTrigger.open)     {configCount = configsCount},
-                             new BacktestSettings(TradeOpenTrigger.close)    {configCount = configsCount  },
-                             new BacktestSettings(TradeOpenTrigger.openClose){configCount = configsCount},
-                             new BacktestSettings(TradeOpenTrigger.high)     {configCount = configsCount},
-                             new BacktestSettings(TradeOpenTrigger.low)      {configCount = configsCount },
-                             new BacktestSettings(TradeOpenTrigger.highLow)  {configCount = configsCount }
+                                 settings.DeepCopy(TradeOpenTrigger.open),
+                                 settings.DeepCopy(TradeOpenTrigger.close),
+                                 settings.DeepCopy(TradeOpenTrigger.openClose),
+                                 settings.DeepCopy(TradeOpenTrigger.high),
+                                 settings.DeepCopy(TradeOpenTrigger.low),
+                                 settings.DeepCopy(TradeOpenTrigger.highLow),
                              };
                     }
 
