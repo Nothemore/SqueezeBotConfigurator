@@ -17,42 +17,28 @@ namespace SqueezeBotConfigurator
     {
         static void Main(string[] args)
         {
-
-
-
-           // var tiime = DateTime.UtcNow;
-           // Console.WriteLine((Int32)tiime.Subtract(new DateTime(1970, 1, 1)).TotalSeconds);
-           // //var asdfa = new TimeSpan(0, 0, 1000, 0);
-           //tiime =  tiime.AddMinutes(-1000);
-
-           // Console.WriteLine((Int32)tiime.Subtract(new DateTime(1970, 1, 1)).TotalSeconds);
-
-          
-           // //Int32 unixTimestamp = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
-           // //DateTime.UtcNow.AddMinutes(-10);
-
-
-           // //Console.WriteLine(unixTimestamp);
-           // Console.ReadKey();
-
-            //var sette = new ExternalSettings();
-            //sette.settings = new BacktestSettings(TradeOpenTrigger.open);
-
-            //sette.tikersAndFrames = new[] { new TikerAndTimeFrame(Tiker.ADAUSDT, TimeFrame.oneMinute) };
-
-            //var jsonFilePath = @" C:\Users\Nocturne\Desktop\inDev\Settings.json";
-            //using (StreamWriter file = File.CreateText(jsonFilePath))
+            #region "Тестирование"
+            //var initTime = DateTime.UtcNow;
+            //var intScope = 5400;
+            //var stack = new Stack<Tuple<DateTime, int>>();
+            //while (intScope > 1000)
             //{
-            //    JsonSerializer serializer = new JsonSerializer();
-            //    serializer.Formatting = Formatting.Indented;
-            //    serializer.Serialize(file, sette);
+            //    initTime = initTime.AddMinutes(-1000);
+            //    intScope -= 1000;
+            //    var tupleTime = initTime;
+            //    stack.Push(Tuple.Create(tupleTime, 1000));
             //}
+            //initTime = initTime.AddMinutes(-intScope);
+            //stack.Push(Tuple.Create(initTime, intScope));
 
+            //foreach (var item in stack)
+            //{
+            //    Console.WriteLine($"{item.Item1} + {item.Item2}");
 
-
-
+            //}
+            //Console.ReadKey();
             //return;
-
+            #endregion
 
             MainInDev(null);
         }
@@ -62,27 +48,27 @@ namespace SqueezeBotConfigurator
 
         static void MainInDev(string[] args)
         {
-
+            //Отдельная еденица для работы с консолью ?
             Console.WriteLine("Выберите источник данных");
             Console.WriteLine($"\t-введите 1 для чтения данных из кода");
             Console.WriteLine($"\t-введите 2 для чтения данных из файла");
             Console.WriteLine($"\t-введите 3 для чтения из интернета");
             string input = string.Empty;
-            var stateCoplite = true;
-            while (stateCoplite)
+            var sourceNotSelected = true;
+            while (sourceNotSelected)
             {
                 input = Console.ReadLine();
                 if (input == "1" || input == "2" || input == "3")
-                    stateCoplite = false;
+                    sourceNotSelected = false;
                 else Console.WriteLine("Введено недопустимое значение");
             }
 
-            ISource source=null;
+            ISource source = null;
             switch (input)
             {
-                case "1": source = new SourceCode();
+                case "1":
+                    source = new SourceCode();
                     break;
-
                 case "2":
                     source = new SourceFile();
                     break;
@@ -91,53 +77,53 @@ namespace SqueezeBotConfigurator
                     break;
             }
 
-            TikerAndTimeFrame[] files = source.TikerFrame;
-            BacktestSettings[] Settings = source.Settings;
-            string outPutFileName = source.reportPath;
-
+            TikerAndTimeFrame[] charts = source.TikerFrame;
+            BacktestSettings[] settings = source.Settings;
+            string outputFileFullName = source.ReportPath;
             var inScopeCandeCount = 1000;
-            var oneSheetTopSize = 100;
-
-
+            var topResultCount = 100;
             var currentPairIndex = 1;
-            if (files.Length == 0) return;
-            Console.WriteLine($"Найдено пар - {files.Length}");
+            if (charts.Length == 0) return;
+            Console.WriteLine($"Найдено пар - {charts.Length}");
             var reports = new List<BacktestReport>();
             var creationTime = DateTime.Now.ToString();
-            foreach (var file in files)
+            foreach (var chart in charts)
             {
-                var dataSet = new DataSet(inScopeCandeCount, file.Tiker, file.TimeFrame);
+                var dataSet = new DataSet(inScopeCandeCount, chart.Tiker, chart.TimeFrame);
                 if (!dataSet.initCorrect) continue;
                 var backtestManager = new BacktestManager();
-                var backtestReport = backtestManager.GetReport(Settings, dataSet, $"{file.Tiker} {file.TimeFrame.AsQuery()}", creationTime, true, inScopeCandeCount);
-
-
-                Console.WriteLine($"Расчет завершен {currentPairIndex}/{files.Length}");
+                var backtestReport = backtestManager.GetReport(settings,
+                                                                dataSet,
+                                                                $"{chart.Tiker} {chart.TimeFrame.AsQuery()}",
+                                                                creationTime,
+                                                                true,
+                                                                inScopeCandeCount);
+                Console.WriteLine($"Расчет завершен {currentPairIndex}/{charts.Length}");
                 currentPairIndex++;
                 if (backtestReport.Configs.All(x => x.takeCount == 0)) continue;
                 reports.Add(backtestReport);
-                
             }
 
             if (source is SourceWeb)
             {
                 var topConfigs = reports
                     .SelectMany(x => x.Configs)
-                    .Where(x=>x.takeCount>0)
+                    .Where(x => x.takeCount > 0)
                     .OrderByDescending(x => x.totalProfit)
-                    .ThenByDescending(x=>x.stopCount)
-                    .Take(oneSheetTopSize)
+                    .ThenByDescending(x => x.stopCount)
+                    .Take(topResultCount)
                     .ToList();
 
                 var marketReport = new BacktestReport();
                 marketReport.Configs = topConfigs;
                 marketReport.Date = creationTime;
-                marketReport.FileName = "OneMinuteAll";
+                marketReport.FileName = "OneMinuteAll>70";
                 marketReport.CandleCount = inScopeCandeCount;
                 reports = new List<BacktestReport>() { marketReport };
             }
 
-            var jsonFilePath = outPutFileName;
+            //Отдельная еденица для работы с отчетом ? 
+            var jsonFilePath = outputFileFullName;
             using (StreamWriter file = File.CreateText(jsonFilePath))
             {
                 JsonSerializer serializer = new JsonSerializer();

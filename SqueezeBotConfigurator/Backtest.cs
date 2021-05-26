@@ -8,9 +8,10 @@ namespace SqueezeBotConfigurator
 {
     public class Backtest
     {
-        public BacktestSettings Settings;
-        public DataSet Data;
+        public BacktestSettings Settings { get; set; }
+        public DataSet Data { get; set; }
         public List<Config> Configs { get; private set; }
+
         public Backtest(BacktestSettings settings, DataSet data)
         {
             Settings = settings;
@@ -30,9 +31,7 @@ namespace SqueezeBotConfigurator
                     currentConfig.stopTrigger = Settings.stopTriggerDefaul;
                     currentConfig.buyTrigger = buyTrigger;
                     currentConfig.sellTrigger = sellTrigger;
-
                     currentConfig.RunTest(Data, Settings.tradeOpenTrigger);
-
                     if (Settings.ConfigPreFilter(currentConfig))
                     {
                         Configs.Add(currentConfig);
@@ -50,11 +49,6 @@ namespace SqueezeBotConfigurator
                 RunTestDefaltStop();
             }
         }
-
-
-
-
-
 
     }
 }

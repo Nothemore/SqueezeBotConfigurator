@@ -23,6 +23,8 @@ namespace SqueezeBotConfigurator
     [JsonConverter(typeof(StringEnumConverter))]
     public enum Tiker
     {
+        TLMUSDT,
+        TKOUSDT,
         BTCUSDT,
         ETHUSDT,
         BNBUSDT,
@@ -330,9 +332,8 @@ namespace SqueezeBotConfigurator
             if (timeFrame == TimeFrame.fiveMinutes) return "5m";
             if (timeFrame == TimeFrame.fifteenMinutes) return "15m";
             if (timeFrame == TimeFrame.thirtyMinutes) return "30m";
-            return null;
+            return null;//Exeption 
         }
-
     }
 
     public class TikerAndTimeFrame
@@ -350,12 +351,8 @@ namespace SqueezeBotConfigurator
 
     public class ExternalSettings
     {
-        //public bool CalculateStopLoss;
-        //public double DefauleStopLoss;
         public BacktestSettings settings;
-
         public TikerAndTimeFrame[] tikersAndFrames;
-
         [JsonProperty(ItemConverterType = typeof(StringEnumConverter))]
         public TimeFrame[] availableTimeFrames = new[]
         {
@@ -363,7 +360,6 @@ namespace SqueezeBotConfigurator
             TimeFrame.threeMinutes,
             TimeFrame.fiveMinutes
         };
-
     }
 
     public class ReadWriteCondition
@@ -391,27 +387,20 @@ namespace SqueezeBotConfigurator
                 tikerAndFrames = externalSetting.tikersAndFrames;
                 var configsCount = 10;
                 var Settings = new BacktestSettings[5];
-         //{
-         //       new BacktestSettings(TradeOpenTrigger.open)     {configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss},
-         //       new BacktestSettings(TradeOpenTrigger.close)    {configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss  },
-         //       new BacktestSettings(TradeOpenTrigger.openClose){configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss },
-         //       new BacktestSettings(TradeOpenTrigger.high)     {configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss  },
-         //       new BacktestSettings(TradeOpenTrigger.low)      {configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss },
-         //       new BacktestSettings(TradeOpenTrigger.highLow)  {configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss }
-         //};
-
-
-
+                //{
+                //       new BacktestSettings(TradeOpenTrigger.open)     {configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss},
+                //       new BacktestSettings(TradeOpenTrigger.close)    {configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss  },
+                //       new BacktestSettings(TradeOpenTrigger.openClose){configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss },
+                //       new BacktestSettings(TradeOpenTrigger.high)     {configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss  },
+                //       new BacktestSettings(TradeOpenTrigger.low)      {configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss },
+                //       new BacktestSettings(TradeOpenTrigger.highLow)  {configCount = configsCount,calculateStop = externalSetting.CalculateStopLoss,stopTriggerDefaul = externalSetting.DefauleStopLoss }
+                //};
             }
             else
             {
                 ResultFileFullName = @"C:\Users\Nocturne\Desktop\inDev\SqResult.json";
             }
-
         }
-
-
-
     }
 
 
@@ -436,7 +425,6 @@ namespace SqueezeBotConfigurator
         public int fristId;
         public int lastId28460;
         public int count;
-
     }
 
 
@@ -444,9 +432,6 @@ namespace SqueezeBotConfigurator
     {
         TikerAndTimeFrame[] TikerFrame { get; set; }
         BacktestSettings[] Settings { get; set; }
-        string reportPath { get; set; }
-
-
+        string ReportPath { get; set; }
     }
-
 }

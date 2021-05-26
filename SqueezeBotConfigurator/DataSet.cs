@@ -31,6 +31,14 @@ namespace SqueezeBotConfigurator
             FillDataSet();
         }
 
+
+
+        /// <summary>
+        /// Поддержка candleCount не реализована
+        /// </summary>
+        /// <param name="candleCount"></param>
+        /// <param name="tiker"></param>
+        /// <param name="timeFrame"></param>
         public DataSet(int candleCount, Tiker tiker, TimeFrame timeFrame)
         {
             this.inScopeCandeCount = candleCount;
@@ -90,7 +98,7 @@ namespace SqueezeBotConfigurator
 
         private void FillDataSet()
         {
-            //Не берет последнюю свечу хз почему надо думать
+            //Не берет последнюю свечу 
             var lastCandles = new Queue<string>(inScopeCandeCount);
             using (var streamReader = new StreamReader(Path))
             {

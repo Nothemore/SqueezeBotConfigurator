@@ -8,7 +8,7 @@ namespace SqueezeBotConfigurator
 {
     class SourceCode : ISource
     {
-        public string reportPath { get; set; }
+        public string ReportPath { get; set; }
         public BacktestSettings[] Settings { get; set; }
         public TikerAndTimeFrame[] TikerFrame { get; set; }
 
@@ -17,26 +17,7 @@ namespace SqueezeBotConfigurator
             int configsCount = 10;
             TikerFrame = new TikerAndTimeFrame[]
                    {
-
-                         //new TikerAndTimeFrame(Tiker.WRXUSDT,TimeFrame.oneMinute),
-                         //new TikerAndTimeFrame(Tiker.WRXUSDT,TimeFrame.fiveMinutes),
-                         //  new TikerAndTimeFrame(Tiker.ADAUSDT,TimeFrame.oneMinute),
-                         //new TikerAndTimeFrame(Tiker.ADAUSDT,TimeFrame.fiveMinutes),
-                         //    new TikerAndTimeFrame(Tiker.DENTUSDT,TimeFrame.oneMinute),
-                         //new TikerAndTimeFrame(Tiker.DENTUSDT,TimeFrame.fiveMinutes),
-                         //     new TikerAndTimeFrame(Tiker.THETAUSDT,TimeFrame.oneMinute),
-                         //new TikerAndTimeFrame(Tiker.THETAUSDT,TimeFrame.fiveMinutes),
-                         //         new TikerAndTimeFrame(Tiker.GRTUSDT,TimeFrame.oneMinute),
-                         //new TikerAndTimeFrame(Tiker.GRTUSDT,TimeFrame.fiveMinutes),
-                         //       new TikerAndTimeFrame(Tiker.VETUSDT,TimeFrame.oneMinute),
-                         //new TikerAndTimeFrame(Tiker.VETUSDT,TimeFrame.fiveMinutes),
-                         //         new TikerAndTimeFrame(Tiker.SXPUSDT,TimeFrame.oneMinute),
-                         //new TikerAndTimeFrame(Tiker.SXPUSDT,TimeFrame.fiveMinutes),
-
-                            new TikerAndTimeFrame(Tiker.FILUSDT,TimeFrame.oneMinute),
-                            new TikerAndTimeFrame(Tiker.EOSUSDT,TimeFrame.oneMinute),
-                            new TikerAndTimeFrame(Tiker.ADAUSDT,TimeFrame.oneMinute),
-
+                            new TikerAndTimeFrame(Tiker.TLMUSDT,TimeFrame.oneMinute),
                    };
             Settings = new BacktestSettings[]
                 {
@@ -44,17 +25,10 @@ namespace SqueezeBotConfigurator
                          new BacktestSettings(TradeOpenTrigger.close)    {configCount = configsCount  },
                          new BacktestSettings(TradeOpenTrigger.openClose){configCount = configsCount},
                          new BacktestSettings(TradeOpenTrigger.high)     {configCount = configsCount},
-                         new BacktestSettings(TradeOpenTrigger.low)      {configCount = configsCount },
-                         new BacktestSettings(TradeOpenTrigger.highLow)  {configCount = configsCount }
+                         new BacktestSettings(TradeOpenTrigger.low)      {configCount = configsCount},
+                         new BacktestSettings(TradeOpenTrigger.highLow)  {configCount = configsCount},
                  };
-            reportPath = @"C:\Users\Nocturne\Desktop\inDev\SqResult.json";
-
-
-
+            ReportPath = @"C:\Users\Nocturne\Desktop\inDev\SqResult.json";
         }
-
-
-
-
     }
 }

@@ -39,9 +39,9 @@ namespace SqueezeBotConfigurator
         public int openDealCandleIndex;
 
         [NonSerialized]
-        public int closeCandleIndex;
+        public int closeDealCandleIndex;
 
-        private double comsa = 0.2;
+        private double commission = 0.2;
 
         public void RunTest(DataSet data, TradeOpenTrigger tradeOpenTrigger)
         {
@@ -68,8 +68,8 @@ namespace SqueezeBotConfigurator
                 if (isDealOpen && data.close[currentCandleIndex] > sellPrice)
                 {
                     isDealOpen = false;
-                    totalProfit *= (1 + (sellTrigger - comsa) / 100);
-                    closeCandleIndex = currentCandleIndex;
+                    totalProfit *= (1 + (sellTrigger - commission) / 100);
+                    closeDealCandleIndex = currentCandleIndex;
                     takeCount++;
                 }
 
@@ -80,8 +80,8 @@ namespace SqueezeBotConfigurator
                     && stopPrice > data.low[currentCandleIndex])
                 {
                     isDealOpen = false;
-                    totalProfit *= (1 - (stopTrigger + comsa) / 100);
-                    closeCandleIndex = currentCandleIndex;
+                    totalProfit *= (1 - (stopTrigger + commission) / 100);
+                    closeDealCandleIndex = currentCandleIndex;
                     if (stopCount == -1) stopCount = 1;
                     else stopCount++;
                 }

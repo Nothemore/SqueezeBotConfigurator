@@ -8,16 +8,16 @@ namespace SqueezeBotConfigurator
 {
     public class BacktestSettings
     {
-        public double buyTriggerMin = 1.2;//1.2
-        public double buyTriggerMax = 4;//8
+        public double buyTriggerMin = 3.0;//1.2
+        public double buyTriggerMax = 6;//8
         public double buyTriggerStep = 0.01;
 
-        public double sellTriggerMin = 0.55;//0.55
+        public double sellTriggerMin = 0.8;//0.55
         public double sellTriggerMax = 7;
         public double sellTriggerStep = 0.01;
 
         public double stopTriggerMin = 1;
-        public double stopTriggerMax =3;
+        public double stopTriggerMax = 3;
         public double stopTriggerStep = 0.1;
         public double stopTriggerDefaul = 5;
         public bool useStopLoss = true;
@@ -31,7 +31,6 @@ namespace SqueezeBotConfigurator
         public Func<List<Config>, List<Config>> ConfigFilter;
         [NonSerialized]
         public Func<Config, bool> ConfigPreFilter;
-
 
         public BacktestSettings(TradeOpenTrigger tradeOpenTrigger)
         {
@@ -52,7 +51,7 @@ namespace SqueezeBotConfigurator
         }
 
 
-        public BacktestSettings DeepCopy(TradeOpenTrigger tradeTrigger)
+        public BacktestSettings Clone(TradeOpenTrigger tradeTrigger)
         {
             var copySettings = new BacktestSettings(tradeTrigger);
 
@@ -71,7 +70,7 @@ namespace SqueezeBotConfigurator
             copySettings.stopTriggerDefaul = stopTriggerDefaul;
             copySettings.useStopLoss = useStopLoss;
             copySettings.calculateStop = calculateStop;
-            copySettings.buySellRatio =buySellRatio;
+            copySettings.buySellRatio = buySellRatio;
             copySettings.configCount = configCount;
             return copySettings;
         }

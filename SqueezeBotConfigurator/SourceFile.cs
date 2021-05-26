@@ -11,7 +11,7 @@ namespace SqueezeBotConfigurator
 {
     class SourceFile : ISource
     {
-        public string reportPath { get; set; }
+        public string ReportPath { get; set; }
         public BacktestSettings[] Settings { get; set; }
         public TikerAndTimeFrame[] TikerFrame { get; set; }
 
@@ -27,17 +27,17 @@ namespace SqueezeBotConfigurator
                 externalSetting = (ExternalSettings)serializer.Deserialize(file, typeof(ExternalSettings));
             }
 
-            reportPath = currentPath.Replace(@"\SqueezeBotConfigurator.exe", @"\SqResult.json");
+            ReportPath = currentPath.Replace(@"\SqueezeBotConfigurator.exe", @"\SqResult.json");
             TikerFrame = externalSetting.tikersAndFrames;
             
             Settings = new BacktestSettings[]
             {
-                externalSetting.settings.DeepCopy(TradeOpenTrigger.high),
-                externalSetting.settings.DeepCopy(TradeOpenTrigger.low),
-                externalSetting.settings.DeepCopy(TradeOpenTrigger.highLow),
-                externalSetting.settings.DeepCopy(TradeOpenTrigger.open),
-                externalSetting.settings.DeepCopy(TradeOpenTrigger.close),
-                externalSetting.settings.DeepCopy(TradeOpenTrigger.openClose),
+                externalSetting.settings.Clone(TradeOpenTrigger.high),
+                externalSetting.settings.Clone(TradeOpenTrigger.low),
+                externalSetting.settings.Clone(TradeOpenTrigger.highLow),
+                externalSetting.settings.Clone(TradeOpenTrigger.open),
+                externalSetting.settings.Clone(TradeOpenTrigger.close),
+                externalSetting.settings.Clone(TradeOpenTrigger.openClose),
             };
         }
     }
